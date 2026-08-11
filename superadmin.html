@@ -19,11 +19,11 @@
 
     <style>
         /* ==========================================================================
-           SUPERADMIN CORE STYLING & DESIGN SYSTEM
+           SUPERADMIN CORE STYLING & DESIGN SYSTEM (FULL STANDALONE 1 FILE)
            ========================================================================== */
         :root {
             --bg-dark: #090d16;
-            --bg-card: rgba(23, 32, 54, 0.75);
+            --bg-card: rgba(23, 32, 54, 0.8);
             --border-color: rgba(255, 255, 255, 0.08);
             --primary: #3b82f6;
             --primary-glow: rgba(59, 130, 246, 0.4);
@@ -76,7 +76,7 @@
         .superadmin-auth-container {
             max-width: 420px;
             margin: 60px auto 0 auto;
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(139, 92, 246, 0.4);
@@ -597,7 +597,7 @@
 <body>
 
     <!-- 1. FORM LOGIN SUPERADMIN (JIKA BELUM AUTENTIKASI) -->
-    <div id="superadminLoginView" class="app-container" style="display:none;">
+    <div id="superadminLoginView" class="app-container" style="display:block;">
         <div class="superadmin-auth-container">
             <div class="auth-logo">
                 <i class="fa-solid fa-user-shield"></i>
@@ -608,18 +608,18 @@
             <form onsubmit="handleSuperadminLogin(event)">
                 <div class="form-group">
                     <label><i class="fa-solid fa-user"></i> Username Superadmin</label>
-                    <input type="text" id="superadminUsnInput" class="form-control" placeholder="Masukkan Username..." required>
+                    <input type="text" id="superadminUsnInput" class="form-control" placeholder="Ketik 24214160905..." required>
                 </div>
                 <div class="form-group">
                     <label><i class="fa-solid fa-key"></i> Password / PIN</label>
-                    <input type="password" id="superadminPwInput" class="form-control" placeholder="Masukkan Password..." required>
+                    <input type="password" id="superadminPwInput" class="form-control" placeholder="Ketik 160905..." required>
                 </div>
                 <button type="submit" class="btn-submit-form" style="background:var(--accent-purple); color:#fff; font-size:15px; padding:14px; margin-top:16px;">
                     <i class="fa-solid fa-right-to-bracket"></i> Masuk Sebagai Superadmin
                 </button>
             </form>
             <div style="margin-top:20px;">
-                <a href="index.html" style="color:var(--text-secondary); text-decoration:none; font-size:12px;"><i class="fa-solid fa-arrow-left"></i> Kembali ke Halaman Utama</a>
+                <a href="index.html" style="color:var(--text-secondary); text-decoration:none; font-size:12px;"><i class="fa-solid fa-arrow-left"></i> Halaman Utama</a>
             </div>
         </div>
     </div>
@@ -833,7 +833,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT EMBEDDED -->
+    <!-- JAVASCRIPT EMBEDDED (STANDALONE) -->
     <script>
         // Konfigurasi Firebase Realtime Database Resmi
         const firebaseConfig = {
@@ -851,11 +851,12 @@
         }
         const db = firebase.database();
 
-        // KREDENSIAL LOGIN SUPERADMIN REKUES USER
+        // KREDENSIAL LOGIN SUPERADMIN DI FILE INI
         const SUPERADMIN_USN = "24214160905";
         const SUPERADMIN_PW = "160905";
 
         let globalHideStatus = false;
+        let isSuperadminAuth = false;
 
         // CHECK AUTH ON LOAD
         document.addEventListener("DOMContentLoaded", () => {
@@ -867,7 +868,13 @@
         });
 
         function checkSuperadminAuth() {
-            const isAuth = sessionStorage.getItem("superadmin_auth") === "true";
+            let isAuth = false;
+            try {
+                isAuth = (sessionStorage.getItem("superadmin_auth") === "true");
+            } catch(e) {}
+            
+            if (isSuperadminAuth) isAuth = true;
+
             const loginView = document.getElementById("superadminLoginView");
             const dashboardView = document.getElementById("superadminDashboardView");
 
@@ -883,26 +890,47 @@
 
         function handleSuperadminLogin(e) {
             e.preventDefault();
-            const usn = document.getElementById("superadminUsnInput").value.trim();
-            const pw = document.getElementById("superadminPwInput").value.trim();
+            const usnInput = document.getElementById("superadminUsnInput");
+            const pwInput = document.getElementById("superadminPwInput");
+            const usn = usnInput ? usnInput.value.trim() : "";
+            const pw = pwInput ? pwInput.value.trim() : "";
 
             if (usn === SUPERADMIN_USN && pw === SUPERADMIN_PW) {
+                isSuperadminAuth = true;
+                try {
+                    sessionStorage.setItem("superadmin_auth", "true");
+                } catch(err) {}
+
                 showLoading("Autentikasi Superadmin Berhasil...", 1);
                 setTimeout(() => {
-                    sessionStorage.setItem("superadmin_auth", "true");
                     hideLoading();
-                    checkSuperadminAuth();
-                }, 600);
+                    const loginView = document.getElementById("superadminLoginView");
+                    const dashboardView = document.getElementById("superadminDashboardView");
+                    if (loginView) loginView.style.display = "none";
+                    if (dashboardView) dashboardView.style.display = "block";
+                    initSuperadminDashboard();
+                }, 300);
             } else {
-                alert("❌ Username atau Password Superadmin SALAH!");
+                alert(`❌ Username atau Password Superadmin SALAH!\n\nPastikan:\nUsername: ${SUPERADMIN_USN}\nPassword: ${SUPERADMIN_PW}`);
             }
         }
 
-        // LOGOUT LOGIC -> REDIRECT KE INDEX.HTML REKUES USER
+        // LOGOUT LOGIC -> RESET KE LOGIN VIEW & REDIRECT INDEX.HTML
         function logoutSuperadmin() {
-            sessionStorage.removeItem("pelatih_admin_auth");
-            sessionStorage.removeItem("superadmin_auth");
-            window.location.href = "index.html";
+            isSuperadminAuth = false;
+            try {
+                sessionStorage.removeItem("pelatih_admin_auth");
+                sessionStorage.removeItem("superadmin_auth");
+            } catch(e) {}
+            
+            const loginView = document.getElementById("superadminLoginView");
+            const dashboardView = document.getElementById("superadminDashboardView");
+            if (loginView) loginView.style.display = "block";
+            if (dashboardView) dashboardView.style.display = "none";
+
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 100);
         }
 
         // Helper Format Rupiah
@@ -1035,7 +1063,6 @@
                     const p = child.val();
                     const isAktif = p.statusAccount !== "disabled";
                     const isAccountHiddenDirectly = p.hideDana === true;
-                    const isDanaEffectivelyHidden = globalHideStatus || isAccountHiddenDirectly;
                     const isAllowCairKhusus = p.allowCairKhusus === true;
 
                     if (selectPelatih && isAktif) {
