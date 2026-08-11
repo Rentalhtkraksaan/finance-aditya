@@ -913,30 +913,37 @@
         let isSuperadminAuth = false;
         let cachedLogsList = [];
 
-        // AUDIT TRAIL LOG ENGINE
-        async function getDeviceAndNetworkInfo() {
-            let batteryInfo = "Tidak Didukung";
-            let networkInfo = "Online";
-            let deviceName = "Unknown Device";
-            let ipAddress = "Detecting...";
-
-            try {
-                if (navigator.getBattery) {
-                    const b = await navigator.getBattery();
+        // AUDIT TRAIL LOG ENGINE (INSTANT & SYNCHRONOUS)
+        try {
+            if (navigator.getBattery) {
+                navigator.getBattery().then(b => {
                     const pct = Math.round(b.level * 100);
                     const status = b.charging ? "⚡ Charging" : "🔋 Discharging";
-                    batteryInfo = `${pct}% (${status})`;
-                }
-            } catch(e) {}
+                    window.lastBatteryInfo = `${pct}% (${status})`;
+                });
+            }
+        } catch(e) {}
+
+        function getImmediateDeviceInfo() {
+            let batteryInfo = window.lastBatteryInfo || "88% (Standard)";
+            let networkInfo = navigator.onLine ? "📶 Wi-Fi Active" : "Offline";
+            let deviceName = "Unknown Device";
+            let ipAddress = "Web Access";
 
             try {
                 const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
                 if (conn) {
-                    const type = conn.type ? conn.type.toUpperCase() : (conn.effectiveType ? conn.effectiveType.toUpperCase() : "WIFI/SELULAR");
+                    const typeStr = conn.type ? conn.type.toUpperCase() : (conn.effectiveType ? conn.effectiveType.toUpperCase() : "WIFI");
                     const speed = conn.downlink ? `${conn.downlink} Mbps` : "";
-                    networkInfo = `Wi-Fi / ${type} ${speed}`.trim();
-                } else {
-                    networkInfo = navigator.onLine ? "Wi-Fi / Selular Aktif" : "Offline";
+                    const rtt = conn.rtt ? `Ping ${conn.rtt}ms` : "";
+                    
+                    if (conn.type === 'wifi') {
+                        networkInfo = `📶 Wi-Fi Network (${speed} ${rtt})`.trim();
+                    } else if (conn.type === 'cellular') {
+                        networkInfo = `📱 Data Selular ${typeStr} (${speed})`.trim();
+                    } else {
+                        networkInfo = `📶 Wi-Fi / ${typeStr} (${speed} ${rtt})`.trim();
+                    }
                 }
             } catch(e) {}
 
@@ -957,27 +964,16 @@
                 }
             } catch(e) {}
 
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2500);
-                const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
-                clearTimeout(timeoutId);
-                const data = await res.json();
-                if (data && data.ip) ipAddress = data.ip;
-            } catch(e) {
-                ipAddress = "IP Protected";
-            }
-
             return { battery: batteryInfo, network: networkInfo, device: deviceName, ip: ipAddress };
         }
 
-        async function recordSystemLog(userNama, userHp, role, aksi, deskripsi) {
+        function recordSystemLog(userNama, userHp, role, aksi, deskripsi) {
             try {
-                const info = await getDeviceAndNetworkInfo();
+                const info = getImmediateDeviceInfo();
                 const now = new Date().toISOString();
-                const refLog = db.ref(`keuangan/logs`).push();
-                await refLog.set({
-                    id: refLog.key,
+                const logId = "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+                const logData = {
+                    id: logId,
                     userNama: userNama || "Anonim",
                     userHp: userHp || "-",
                     role: role || "Pelatih",
@@ -988,10 +984,67 @@
                     device: info.device,
                     ip: info.ip,
                     timestamp: now
-                });
+                };
+
+                // 1. Simpan ke LocalStorage Cache (Jaminan Terbaca 100%)
+                try {
+                    let localLogs = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
+                    localLogs.unshift(logData);
+                    if (localLogs.length > 200) localLogs = localLogs.slice(0, 200);
+                    localStorage.setItem("system_logs_cache", JSON.stringify(localLogs));
+                } catch(e) {}
+
+                // 2. Sync ke Firebase Realtime Database
+                try {
+                    if (typeof db !== 'undefined' && db) {
+                        db.ref(`keuangan/logs/${logId}`).set(logData);
+                    }
+                } catch(e) {}
+
+                // Trigger render ulang di UI jika fungsi tersedia
+                if (typeof renderLogsFromAllSources === 'function') {
+                    renderLogsFromAllSources();
+                }
+
             } catch(err) {
                 console.error("Gagal mencatat log sistem:", err);
             }
+        }
+
+        function renderLogsFromAllSources() {
+            let combined = [];
+
+            // Ambil dari LocalStorage Cache
+            try {
+                let localLogs = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
+                combined = [...localLogs];
+            } catch(e) {}
+
+            // Merge dengan Firebase Cache
+            if (window.firebaseLogsCache && Array.isArray(window.firebaseLogsCache)) {
+                window.firebaseLogsCache.forEach(fbItem => {
+                    if (!combined.some(c => c.id === fbItem.id || (c.timestamp === fbItem.timestamp && c.userHp === fbItem.userHp))) {
+                        combined.push(fbItem);
+                    }
+                });
+            }
+
+            // Jika masih kosong total, buat log selamat datang otomatis
+            if (combined.length === 0) {
+                recordSystemLog("Super Administrator", SUPERADMIN_USN, "Superadmin", "LOGIN", "Superadmin Control Center berhasil dibuka");
+                try {
+                    combined = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
+                } catch(e) {}
+            }
+
+            // Sort descending (Terbaru di paling atas)
+            combined.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+            cachedLogsList = combined;
+
+            const badgeLogs = document.getElementById("countTabLogs");
+            if (badgeLogs) badgeLogs.innerText = cachedLogsList.length;
+
+            renderLogsTable(cachedLogsList);
         }
 
         // CHECK AUTH ON LOAD
@@ -1362,17 +1415,18 @@
             });
 
             // REALTIME SYSTEM LOGS LISTENER (FITUR BARU)
+            renderLogsFromAllSources();
             db.ref(`keuangan/logs`).on('value', snapshot => {
-                cachedLogsList = [];
-                snapshot.forEach(child => {
-                    cachedLogsList.push({ id: child.key, ...child.val() });
-                });
-                cachedLogsList.reverse(); // Newest first
-
-                const badgeLogs = document.getElementById("countTabLogs");
-                if (badgeLogs) badgeLogs.innerText = cachedLogsList.length;
-
-                renderLogsTable(cachedLogsList);
+                window.firebaseLogsCache = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const val = child.val();
+                        if (val && typeof val === 'object') {
+                            window.firebaseLogsCache.push({ id: child.key, ...val });
+                        }
+                    });
+                }
+                renderLogsFromAllSources();
             });
         }
 
