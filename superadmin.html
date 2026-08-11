@@ -893,6 +893,7 @@
         const firebaseConfig = {
           apiKey: "AIzaSyCX_lNiA1LcGBBZe7ouQ16mdIGzyGyQtIY",
           authDomain: "gaji-36cc2.firebaseapp.com",
+          databaseURL: "https://gaji-36cc2-default-rtdb.firebaseio.com",
           projectId: "gaji-36cc2",
           storageBucket: "gaji-36cc2.firebasestorage.app",
           messagingSenderId: "939605055331",
@@ -1014,28 +1015,20 @@
         function renderLogsFromAllSources() {
             let combined = [];
 
-            // Ambil dari LocalStorage Cache
+            // 1. Utamakan data dari Firebase Cloud Realtime DB (Lintas Hosting, Domain & Perangkat HP Beda)
+            if (window.firebaseLogsCache && Array.isArray(window.firebaseLogsCache)) {
+                combined = [...window.firebaseLogsCache];
+            }
+
+            // 2. Gabungkan data LocalStorage perangkat ini jika belum terdaftar
             try {
                 let localLogs = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
-                combined = [...localLogs];
-            } catch(e) {}
-
-            // Merge dengan Firebase Cache
-            if (window.firebaseLogsCache && Array.isArray(window.firebaseLogsCache)) {
-                window.firebaseLogsCache.forEach(fbItem => {
-                    if (!combined.some(c => c.id === fbItem.id || (c.timestamp === fbItem.timestamp && c.userHp === fbItem.userHp))) {
-                        combined.push(fbItem);
+                localLogs.forEach(loc => {
+                    if (!combined.some(c => c.id === loc.id || (c.timestamp === loc.timestamp && c.userHp === loc.userHp))) {
+                        combined.push(loc);
                     }
                 });
-            }
-
-            // Jika masih kosong total, buat log selamat datang otomatis
-            if (combined.length === 0) {
-                recordSystemLog("Super Administrator", SUPERADMIN_USN, "Superadmin", "LOGIN", "Superadmin Control Center berhasil dibuka");
-                try {
-                    combined = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
-                } catch(e) {}
-            }
+            } catch(e) {}
 
             // Sort descending (Terbaru di paling atas)
             combined.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
