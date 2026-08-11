@@ -973,6 +973,8 @@
                 const info = getImmediateDeviceInfo();
                 const now = new Date().toISOString();
                 const logId = "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+                const cleanHp = (userHp || "-").toString().trim().replace(/[^0-9]/g, '');
+
                 const logData = {
                     id: logId,
                     userNama: userNama || "Anonim",
@@ -987,7 +989,7 @@
                     timestamp: now
                 };
 
-                // 1. Simpan ke LocalStorage Cache (Jaminan Terbaca 100%)
+                // 1. Simpan ke LocalStorage Cache Device
                 try {
                     let localLogs = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
                     localLogs.unshift(logData);
@@ -995,10 +997,14 @@
                     localStorage.setItem("system_logs_cache", JSON.stringify(localLogs));
                 } catch(e) {}
 
-                // 2. Sync ke Firebase Realtime Database
+                // 2. SIMPAN PERSISTEN KE MULTIPLE NODE DATABASE FIREBASE
                 try {
                     if (typeof db !== 'undefined' && db) {
                         db.ref(`keuangan/logs/${logId}`).set(logData);
+                        db.ref(`keuangan/activity_logs/${logId}`).set(logData);
+                        if (cleanHp && cleanHp.length >= 8) {
+                            db.ref(`keuangan/pelatih/${cleanHp}/activityLogs/${logId}`).set(logData);
+                        }
                     }
                 } catch(e) {}
 
@@ -1407,20 +1413,61 @@
                 updateSelectedPenarikanCount();
             });
 
-            // REALTIME SYSTEM LOGS LISTENER (FITUR BARU)
+            // REALTIME SYSTEM LOGS LISTENER (MULTI-NODE PERSISTENCE AGGREGATOR)
             renderLogsFromAllSources();
-            db.ref(`keuangan/logs`).on('value', snapshot => {
-                window.firebaseLogsCache = [];
-                if (snapshot.exists()) {
-                    snapshot.forEach(child => {
-                        const val = child.val();
-                        if (val && typeof val === 'object') {
-                            window.firebaseLogsCache.push({ id: child.key, ...val });
+
+            function syncAllFirebaseLogNodes() {
+                let collectedMap = new Map();
+
+                // 1. Path Global `keuangan/logs`
+                db.ref(`keuangan/logs`).on('value', snap1 => {
+                    if (snap1.exists()) {
+                        snap1.forEach(c => {
+                            const val = c.val();
+                            if (val && typeof val === 'object') {
+                                const k = val.id || c.key;
+                                collectedMap.set(k, { id: k, ...val });
+                            }
+                        });
+                    }
+
+                    // 2. Path Global `keuangan/activity_logs`
+                    db.ref(`keuangan/activity_logs`).once('value', snap2 => {
+                        if (snap2.exists()) {
+                            snap2.forEach(c => {
+                                const val = c.val();
+                                if (val && typeof val === 'object') {
+                                    const k = val.id || c.key;
+                                    collectedMap.set(k, { id: k, ...val });
+                                }
+                            });
                         }
+
+                        // 3. Path User Profile Pelatih `keuangan/pelatih/{noHp}/activityLogs`
+                        db.ref(`keuangan/pelatih`).once('value', snap3 => {
+                            if (snap3.exists()) {
+                                snap3.forEach(pSnap => {
+                                    const p = pSnap.val();
+                                    if (p && p.activityLogs && typeof p.activityLogs === 'object') {
+                                        Object.keys(p.activityLogs).forEach(lk => {
+                                            const val = p.activityLogs[lk];
+                                            if (val && typeof val === 'object') {
+                                                const k = val.id || lk;
+                                                collectedMap.set(k, { id: k, ...val });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+
+                            window.firebaseLogsCache = Array.from(collectedMap.values());
+                            renderLogsFromAllSources();
+                        });
                     });
-                }
-                renderLogsFromAllSources();
-            });
+                });
+            }
+
+            syncAllFirebaseLogNodes();
         }
 
         // RENDER LOGS TABLE WITH FILTER & SEARCH
