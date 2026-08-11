@@ -23,7 +23,7 @@
            ========================================================================== */
         :root {
             --bg-dark: #090d16;
-            --bg-card: rgba(23, 32, 54, 0.7);
+            --bg-card: rgba(23, 32, 54, 0.75);
             --border-color: rgba(255, 255, 255, 0.08);
             --primary: #3b82f6;
             --primary-glow: rgba(59, 130, 246, 0.4);
@@ -70,6 +70,30 @@
             max-width: 1150px;
             margin: 0 auto;
             padding: 20px 16px;
+        }
+
+        /* LOGIN BOX SUPERADMIN */
+        .superadmin-auth-container {
+            max-width: 420px;
+            margin: 60px auto 0 auto;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: var(--radius-xl);
+            padding: 32px 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .auth-logo i {
+            font-size: 36px;
+            color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.2);
+            padding: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(139, 92, 246, 0.4);
+            margin-bottom: 12px;
         }
 
         /* NAVBAR / HEADER */
@@ -387,6 +411,7 @@
 
         .form-group {
             margin-bottom: 16px;
+            text-align: left;
         }
 
         .form-group label {
@@ -571,7 +596,36 @@
 </head>
 <body>
 
-    <div class="app-container">
+    <!-- 1. FORM LOGIN SUPERADMIN (JIKA BELUM AUTENTIKASI) -->
+    <div id="superadminLoginView" class="app-container" style="display:none;">
+        <div class="superadmin-auth-container">
+            <div class="auth-logo">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h2 style="font-size:22px; font-weight:800; margin-bottom:4px;">Login Portal Superadmin</h2>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:24px;">Masukkan Kredensial Akses Kontrol Superadmin</p>
+            
+            <form onsubmit="handleSuperadminLogin(event)">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-user"></i> Username Superadmin</label>
+                    <input type="text" id="superadminUsnInput" class="form-control" placeholder="Masukkan Username..." required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-key"></i> Password / PIN</label>
+                    <input type="password" id="superadminPwInput" class="form-control" placeholder="Masukkan Password..." required>
+                </div>
+                <button type="submit" class="btn-submit-form" style="background:var(--accent-purple); color:#fff; font-size:15px; padding:14px; margin-top:16px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Masuk Sebagai Superadmin
+                </button>
+            </form>
+            <div style="margin-top:20px;">
+                <a href="index.html" style="color:var(--text-secondary); text-decoration:none; font-size:12px;"><i class="fa-solid fa-arrow-left"></i> Kembali ke Halaman Utama</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN DASHBOARD SUPERADMIN (SETELAH LOGGED IN) -->
+    <div id="superadminDashboardView" class="app-container" style="display:none;">
         <!-- HEADER SUPERADMIN -->
         <header class="main-header">
             <div class="logo-brand">
@@ -586,7 +640,7 @@
                     <div class="name">Super Administrator</div>
                     <div class="role">Kontrol Penuh System</div>
                 </div>
-                <!-- LOGOUT REDIRECT KE JADWAL.HTML -->
+                <!-- LOGOUT REDIRECT KE INDEX.HTML -->
                 <button class="btn-logout" onclick="logoutSuperadmin()">
                     <i class="fa-solid fa-right-from-bracket"></i> Keluar
                 </button>
@@ -614,7 +668,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                 <div>
                     <h3 style="font-size:16px; font-weight:700;"><i class="fa-solid fa-users" style="color:var(--accent-purple);"></i> Master Data Akun Pelatih Terdaftar</h3>
-                    <p style="font-size:12px; color:var(--text-secondary);">Kelola status aktif/nonaktif, sembunyikan dana (hide dana), dan hapus akun pelatih</p>
+                    <p style="font-size:12px; color:var(--text-secondary);">Kelola status aktif/nonaktif, sembunyikan dana (hide dana), izin pencairan khusus, dan hapus akun pelatih</p>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                     <button id="btnToggleHideDanaGlobal" class="btn-action-satset" style="background:#6366f1; color:#fff; padding:10px 16px; font-size:13px;" onclick="adminToggleHideDanaGlobal()">
@@ -633,7 +687,8 @@
                             <th>Profil & Nama Pelatih</th>
                             <th>No HP (Username)</th>
                             <th>Password (PIN)</th>
-                            <th>Status & Fitur Akun</th>
+                            <th>Status & Fitur Hide Dana</th>
+                            <th>Akses Pencairan Khusus</th>
                             <th>Rekening Default Pelatih</th>
                             <th>Aksi Kontrol Akun</th>
                         </tr>
@@ -729,7 +784,7 @@
                         <i class="fa-regular fa-calendar-check" style="color:#f59e0b;"></i> Atur Tanggal Jadwal Pencairan Honor
                     </h3>
                     <p style="font-size:12px; color:var(--text-secondary);">
-                        Pelatih hanya dapat mengeklik tombol <strong>Tarik Tunai</strong> pada/setelah tanggal yang diatur di bawah ini.
+                        Pelatih hanya dapat mengeklik tombol <strong>Tarik Tunai</strong> pada/setelah tanggal yang diatur di bawah ini (kecuali akun yang diberi Akses Pencairan Khusus).
                     </p>
                 </div>
                 <form onsubmit="handleSaveTglCair(event)" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -796,7 +851,54 @@
         }
         const db = firebase.database();
 
-        // LOGOUT LOGIC -> REDIRECT KE JADWAL.HTML
+        // KREDENSIAL LOGIN SUPERADMIN REKUES USER
+        const SUPERADMIN_USN = "24214160905";
+        const SUPERADMIN_PW = "160905";
+
+        let globalHideStatus = false;
+
+        // CHECK AUTH ON LOAD
+        document.addEventListener("DOMContentLoaded", () => {
+            checkSuperadminAuth();
+            const today = new Date().toISOString().split('T')[0];
+            if (document.getElementById("inputTanggalAdmin")) {
+                document.getElementById("inputTanggalAdmin").value = today;
+            }
+        });
+
+        function checkSuperadminAuth() {
+            const isAuth = sessionStorage.getItem("superadmin_auth") === "true";
+            const loginView = document.getElementById("superadminLoginView");
+            const dashboardView = document.getElementById("superadminDashboardView");
+
+            if (isAuth) {
+                if (loginView) loginView.style.display = "none";
+                if (dashboardView) dashboardView.style.display = "block";
+                initSuperadminDashboard();
+            } else {
+                if (loginView) loginView.style.display = "block";
+                if (dashboardView) dashboardView.style.display = "none";
+            }
+        }
+
+        function handleSuperadminLogin(e) {
+            e.preventDefault();
+            const usn = document.getElementById("superadminUsnInput").value.trim();
+            const pw = document.getElementById("superadminPwInput").value.trim();
+
+            if (usn === SUPERADMIN_USN && pw === SUPERADMIN_PW) {
+                showLoading("Autentikasi Superadmin Berhasil...", 1);
+                setTimeout(() => {
+                    sessionStorage.setItem("superadmin_auth", "true");
+                    hideLoading();
+                    checkSuperadminAuth();
+                }, 600);
+            } else {
+                alert("❌ Username atau Password Superadmin SALAH!");
+            }
+        }
+
+        // LOGOUT LOGIC -> REDIRECT KE INDEX.HTML REKUES USER
         function logoutSuperadmin() {
             sessionStorage.removeItem("pelatih_admin_auth");
             sessionStorage.removeItem("superadmin_auth");
@@ -898,15 +1000,6 @@
             if (secSetting) secSetting.style.display = (tabName === 'setting') ? 'block' : 'none';
         }
 
-        // INIT SUPERADMIN DASHBOARD
-        document.addEventListener("DOMContentLoaded", () => {
-            initSuperadminDashboard();
-            const today = new Date().toISOString().split('T')[0];
-            if (document.getElementById("inputTanggalAdmin")) {
-                document.getElementById("inputTanggalAdmin").value = today;
-            }
-        });
-
         function initSuperadminDashboard() {
             // Realtime Tanggal Cair Config
             db.ref(`keuangan/config/tglCair`).on('value', snapshot => {
@@ -916,10 +1009,10 @@
 
             // Realtime Global Hide Dana Config
             db.ref(`keuangan/config/hideDanaGlobal`).on('value', snapshot => {
-                const isHideGlobal = snapshot.val() === true;
+                globalHideStatus = snapshot.val() === true;
                 const btnGlobal = document.getElementById("btnToggleHideDanaGlobal");
                 if (btnGlobal) {
-                    if (isHideGlobal) {
+                    if (globalHideStatus) {
                         btnGlobal.style.background = "#f59e0b";
                         btnGlobal.style.color = "#000";
                         btnGlobal.innerHTML = `<i class="fa-solid fa-eye-slash"></i> Global Hide Dana: AKTIF (Uang Disembunyikan u/ Semua)`;
@@ -941,7 +1034,9 @@
                 snapshot.forEach(child => {
                     const p = child.val();
                     const isAktif = p.statusAccount !== "disabled";
-                    const isHideAccount = p.hideDana === true;
+                    const isAccountHiddenDirectly = p.hideDana === true;
+                    const isDanaEffectivelyHidden = globalHideStatus || isAccountHiddenDirectly;
+                    const isAllowCairKhusus = p.allowCairKhusus === true;
 
                     if (selectPelatih && isAktif) {
                         selectPelatih.innerHTML += `<option value="${p.noHp}">${p.nama} (${p.noHp})</option>`;
@@ -952,17 +1047,28 @@
                             ? '<span class="badge-status success">Aktif</span>'
                             : '<span class="badge-status rejected">Nonaktif</span>';
 
-                        const badgeHideDana = isHideAccount
-                            ? '<span class="badge-status pending" style="margin-left:4px;"><i class="fa-solid fa-eye-slash"></i> Dana Hidden</span>'
-                            : '';
+                        let badgeHideDana = '';
+                        if (globalHideStatus) {
+                            badgeHideDana = '<span class="badge-status pending" style="background:#f59e0b; color:#000; font-size:10px;" title="Tersembunyi karena Mode Global Hide aktif"><i class="fa-solid fa-eye-slash"></i> Global Hide</span>';
+                        } else if (isAccountHiddenDirectly) {
+                            badgeHideDana = '<span class="badge-status pending" style="font-size:10px;"><i class="fa-solid fa-eye-slash"></i> Dana Hidden</span>';
+                        }
+
+                        const badgeCairKhusus = isAllowCairKhusus
+                            ? '<span class="badge-status success" style="font-size:10px;"><i class="fa-solid fa-key"></i> Cair Kapan Saja</span>'
+                            : '<span class="badge-status pending" style="background:rgba(100,116,139,0.2); color:#94a3b8; border-color:rgba(100,116,139,0.3); font-size:10px;">Ikut Jadwal</span>';
 
                         const btnToggleStatus = isAktif
                             ? `<button class="btn-action-danger" style="padding:4px 8px; font-size:11px;" onclick="adminToggleStatusPelatih('${p.noHp}', 'disabled')"><i class="fa-solid fa-ban"></i> Nonaktifkan</button>`
                             : `<button class="btn-action-satset" style="padding:4px 8px; font-size:11px;" onclick="adminToggleStatusPelatih('${p.noHp}', 'active')"><i class="fa-solid fa-check"></i> Aktifkan</button>`;
 
-                        const btnToggleHideDana = isHideAccount
-                            ? `<button class="btn-action-satset" style="background:#8b5cf6; color:#fff; padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminToggleHideDanaPelatih('${p.noHp}', false)"><i class="fa-solid fa-eye"></i> Show Dana</button>`
-                            : `<button class="btn-action-satset" style="background:rgba(139, 92, 246, 0.2); color:#c084fc; border:1px solid rgba(139, 92, 246, 0.4); padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminToggleHideDanaPelatih('${p.noHp}', true)"><i class="fa-solid fa-eye-slash"></i> Hide Dana</button>`;
+                        const btnToggleHideDana = isAccountHiddenDirectly
+                            ? `<button class="btn-action-satset" style="background:#8b5cf6; color:#fff; padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminToggleHideDanaPelatih('${p.noHp}', false)"><i class="fa-solid fa-eye"></i> Show Dana Akun</button>`
+                            : `<button class="btn-action-satset" style="background:rgba(139, 92, 246, 0.2); color:#c084fc; border:1px solid rgba(139, 92, 246, 0.4); padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminToggleHideDanaPelatih('${p.noHp}', true)"><i class="fa-solid fa-eye-slash"></i> Hide Dana Akun</button>`;
+
+                        const btnToggleCairKhusus = isAllowCairKhusus
+                            ? `<button class="btn-action-danger" style="padding:4px 8px; font-size:11px;" onclick="adminToggleAllowCairKhusus('${p.noHp}', false)"><i class="fa-solid fa-lock"></i> Kunci Sesuai Jadwal</button>`
+                            : `<button class="btn-action-satset" style="background:#06b6d4; color:#fff; padding:4px 8px; font-size:11px;" onclick="adminToggleAllowCairKhusus('${p.noHp}', true)"><i class="fa-solid fa-key"></i> Buka Pencairan Khusus</button>`;
 
                         const btnHapus = `<button class="btn-action-danger" style="padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminHapusPelatih('${p.noHp}', '${p.nama.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i> Hapus</button>`;
 
@@ -991,6 +1097,7 @@
                             <td>${p.noHp}</td>
                             <td><code style="background:rgba(59, 130, 246, 0.15); color:#60a5fa; padding:2px 8px; border-radius:4px; font-weight:700;">${p.tglLahir || '-'}</code></td>
                             <td>${badgeStatus} ${badgeHideDana}</td>
+                            <td>${badgeCairKhusus}<br><div style="margin-top:4px;">${btnToggleCairKhusus}</div></td>
                             <td>${p.bankDefault ? `${p.bankDefault} - ${p.norekDefault} a.n ${p.pemilikDefault}` : '<span style="color:#64748b;">Belum set</span>'}</td>
                             <td>${btnToggleStatus} ${btnToggleHideDana} ${btnHapus}</td>
                         `;
@@ -1084,7 +1191,23 @@
             });
         }
 
-        // HANDLERS
+        // HANDLERS & CONTROL FUNCTIONS
+        function adminToggleAllowCairKhusus(noHp, allowTarget) {
+            const txt = allowTarget ? "MEMBUKA AKSI PENCAIRAN KHUSUS (Pelatih bisa tarik tunai kapan saja)" : "MENGUNCI KEMBALI FITUR PENCAIRAN (Ikut tanggal cair global)";
+            if (confirm(`Apakah Anda yakin ingin ${txt} untuk akun pelatih (${noHp})?`)) {
+                showLoading("Memproses Akses Pencairan...", 10);
+                db.ref(`keuangan/pelatih/${noHp}`).update({
+                    allowCairKhusus: allowTarget
+                }).then(() => {
+                    hideLoading();
+                    alert(allowTarget ? `🎉 Berhasil! Akun pelatih (${noHp}) sekarang dapat mengeklik tombol Tarik Tunai kapan saja!` : `🔒 Berhasil! Akses pencairan khusus dikunci kembali dan mengikuti tanggal cair global.`);
+                }).catch(err => {
+                    hideLoading();
+                    alert("❌ Gagal memproses: " + err.message);
+                });
+            }
+        }
+
         function openModalKehadiranAdmin() {
             document.getElementById("editKehadiranKey").value = "";
             document.getElementById("titleModalKehadiran").innerHTML = `<i class="fa-solid fa-clipboard-user" style="color:var(--primary);"></i> Catat Kehadiran & Honor Mengajar`;
