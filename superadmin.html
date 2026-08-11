@@ -31,6 +31,7 @@
             --accent-amber: #f59e0b;
             --accent-rose: #f43f5e;
             --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
@@ -67,7 +68,7 @@
 
         /* CONTAINER */
         .app-container {
-            max-width: 1150px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px 16px;
         }
@@ -197,8 +198,8 @@
 
         .admin-tab-btn {
             flex: 1;
-            min-width: 150px;
-            padding: 12px 16px;
+            min-width: 140px;
+            padding: 12px 14px;
             background: transparent;
             border: 1px solid transparent;
             border-radius: var(--radius-md);
@@ -280,6 +281,8 @@
         .badge-status.pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
         .badge-status.success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
         .badge-status.rejected { background: rgba(244, 63, 94, 0.2); color: #f87171; border: 1px solid rgba(244, 63, 94, 0.3); }
+        .badge-status.info { background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+        .badge-status.purple { background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); }
 
         /* BUTTONS */
         .btn-action-satset {
@@ -632,7 +635,7 @@
                 <i class="fa-solid fa-crown"></i>
                 <div>
                     <h1>Portal Superadmin Control Center</h1>
-                    <p>Manajemen Master Akun Pelatih, Absensi, Honor & ACC Pencairan</p>
+                    <p>Manajemen Master Akun Pelatih, Absensi, Honor, ACC Pencairan & Audit Logs</p>
                 </div>
             </div>
             <div class="user-badge-header">
@@ -660,6 +663,9 @@
             </button>
             <button class="admin-tab-btn" onclick="switchAdminTab('setting', this)">
                 <i class="fa-regular fa-calendar-check"></i> Setting Tanggal Cair
+            </button>
+            <button class="admin-tab-btn" onclick="switchAdminTab('logs', this)">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#c084fc;"></i> Histori Log & Perangkat (<span id="countTabLogs">0</span>)
             </button>
         </nav>
 
@@ -795,6 +801,54 @@
                 </form>
             </div>
         </section>
+
+        <!-- 5. HISTORI LOG & AUDIT AKTIVITAS PERANGKAT (FITUR BARU) -->
+        <section id="secLogs" class="glass-card" style="border:1px solid rgba(139, 92, 246, 0.4); display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h3 style="font-size:16px; font-weight:800; color:#c084fc;">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Audit Trail & Histori Aktivitas Perangkat System
+                    </h3>
+                    <p style="font-size:12px; color:var(--text-secondary);">
+                        Rekam histori real-time siapa saja yang Login/Logout, status Baterai (%), Nama Device, Jaringan (Wi-Fi/Selular), IP Address & Aktivitas didalamnya.
+                    </p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <input type="text" id="searchLogInput" class="form-control" style="width:180px;" placeholder="🔍 Cari Log..." onkeyup="filterLogsTable()">
+                    <select id="filterLogType" class="form-control" style="width:140px;" onchange="filterLogsTable()">
+                        <option value="">Semua Aksi</option>
+                        <option value="LOGIN">LOGIN</option>
+                        <option value="LOGOUT">LOGOUT</option>
+                        <option value="TARIK_TUNAI">TARIK TUNAI</option>
+                        <option value="ACC_PENCAIRAN">ACC PENCAIRAN</option>
+                        <option value="INPUT_ABSEN">INPUT ABSEN</option>
+                        <option value="HAPUS_DATA">HAPUS DATA</option>
+                    </select>
+                    <button id="btnHapusMassalLog" class="btn-action-danger" style="display:none; padding:10px 16px; font-size:13px;" onclick="adminHapusMassalLog()">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Log Terpilih (<span id="countSelectedLog">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;"><input type="checkbox" id="selectAllLog" onclick="toggleSelectAllLog(this)"></th>
+                            <th>Waktu & Tanggal</th>
+                            <th>User / Pelatih</th>
+                            <th>Jenis Aksi</th>
+                            <th>Baterai & Device Name</th>
+                            <th>Jaringan / Wi-Fi & IP Address</th>
+                            <th>Deskripsi Aktivitas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelSystemLogs">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 
     <!-- MODAL INPUT & EDIT KEHADIRAN & GAJI PELATIH -->
@@ -833,7 +887,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT EMBEDDED (STANDALONE) -->
+    <!-- JAVASCRIPT EMBEDDED (STANDALONE 1 FILE) -->
     <script>
         // Konfigurasi Firebase Realtime Database Resmi
         const firebaseConfig = {
@@ -857,6 +911,88 @@
 
         let globalHideStatus = false;
         let isSuperadminAuth = false;
+        let cachedLogsList = [];
+
+        // AUDIT TRAIL LOG ENGINE
+        async function getDeviceAndNetworkInfo() {
+            let batteryInfo = "Tidak Didukung";
+            let networkInfo = "Online";
+            let deviceName = "Unknown Device";
+            let ipAddress = "Detecting...";
+
+            try {
+                if (navigator.getBattery) {
+                    const b = await navigator.getBattery();
+                    const pct = Math.round(b.level * 100);
+                    const status = b.charging ? "⚡ Charging" : "🔋 Discharging";
+                    batteryInfo = `${pct}% (${status})`;
+                }
+            } catch(e) {}
+
+            try {
+                const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (conn) {
+                    const type = conn.type ? conn.type.toUpperCase() : (conn.effectiveType ? conn.effectiveType.toUpperCase() : "WIFI/SELULAR");
+                    const speed = conn.downlink ? `${conn.downlink} Mbps` : "";
+                    networkInfo = `Wi-Fi / ${type} ${speed}`.trim();
+                } else {
+                    networkInfo = navigator.onLine ? "Wi-Fi / Selular Aktif" : "Offline";
+                }
+            } catch(e) {}
+
+            try {
+                const ua = navigator.userAgent;
+                if (/android/i.test(ua)) {
+                    deviceName = "Android Device";
+                    const match = ua.match(/Android\s+([0-9\.]+)/i);
+                    if (match) deviceName += ` (v${match[1]})`;
+                } else if (/iPhone|iPad|iPod/i.test(ua)) {
+                    deviceName = "Apple iOS Device";
+                } else if (/Windows/i.test(ua)) {
+                    deviceName = "Windows PC";
+                } else if (/Macintosh/i.test(ua)) {
+                    deviceName = "Mac OS Device";
+                } else if (/Linux/i.test(ua)) {
+                    deviceName = "Linux Device";
+                }
+            } catch(e) {}
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2500);
+                const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                const data = await res.json();
+                if (data && data.ip) ipAddress = data.ip;
+            } catch(e) {
+                ipAddress = "IP Protected";
+            }
+
+            return { battery: batteryInfo, network: networkInfo, device: deviceName, ip: ipAddress };
+        }
+
+        async function recordSystemLog(userNama, userHp, role, aksi, deskripsi) {
+            try {
+                const info = await getDeviceAndNetworkInfo();
+                const now = new Date().toISOString();
+                const refLog = db.ref(`keuangan/logs`).push();
+                await refLog.set({
+                    id: refLog.key,
+                    userNama: userNama || "Anonim",
+                    userHp: userHp || "-",
+                    role: role || "Pelatih",
+                    aksi: aksi || "AKTIVITAS",
+                    deskripsi: deskripsi || "-",
+                    baterai: info.battery,
+                    jaringan: info.network,
+                    device: info.device,
+                    ip: info.ip,
+                    timestamp: now
+                });
+            } catch(err) {
+                console.error("Gagal mencatat log sistem:", err);
+            }
+        }
 
         // CHECK AUTH ON LOAD
         document.addEventListener("DOMContentLoaded", () => {
@@ -901,6 +1037,8 @@
                     sessionStorage.setItem("superadmin_auth", "true");
                 } catch(err) {}
 
+                recordSystemLog("Super Administrator", SUPERADMIN_USN, "Superadmin", "LOGIN", "Superadmin berhasil login ke Portal Control Center");
+
                 showLoading("Autentikasi Superadmin Berhasil...", 1);
                 setTimeout(() => {
                     hideLoading();
@@ -911,12 +1049,14 @@
                     initSuperadminDashboard();
                 }, 300);
             } else {
+                recordSystemLog("Super Administrator", usn || "-", "Superadmin", "LOGIN_GAGAL", `Percobaan login Superadmin gagal dengan username: ${usn}`);
                 alert(`❌ Username atau Password Superadmin SALAH!\n\nPastikan:\nUsername: ${SUPERADMIN_USN}\nPassword: ${SUPERADMIN_PW}`);
             }
         }
 
-        // LOGOUT LOGIC -> RESET KE LOGIN VIEW & REDIRECT INDEX.HTML
+        // LOGOUT LOGIC
         function logoutSuperadmin() {
+            recordSystemLog("Super Administrator", SUPERADMIN_USN, "Superadmin", "LOGOUT", "Superadmin logout dari portal");
             isSuperadminAuth = false;
             try {
                 sessionStorage.removeItem("pelatih_admin_auth");
@@ -945,7 +1085,9 @@
             if (isNaN(d.getTime())) return dateStr;
             const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][d.getDay()];
             const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"][d.getMonth()];
-            return `${hari}, ${d.getDate()} ${bulan} ${d.getFullYear()}`;
+            const jam = String(d.getHours()).padStart(2, '0');
+            const menit = String(d.getMinutes()).padStart(2, '0');
+            return `${hari}, ${d.getDate()} ${bulan} ${d.getFullYear()} ${jam}:${menit} WIB`;
         }
 
         // FAST LOADING SYSTEM (MAX 10 DETIK)
@@ -1021,11 +1163,13 @@
             const secPencairan = document.getElementById("secPencairan");
             const secKehadiran = document.getElementById("secKehadiran");
             const secSetting = document.getElementById("secSettingCair");
+            const secLogs = document.getElementById("secLogs");
 
             if (secMaster) secMaster.style.display = (tabName === 'pelatih') ? 'block' : 'none';
             if (secPencairan) secPencairan.style.display = (tabName === 'penarikan') ? 'block' : 'none';
             if (secKehadiran) secKehadiran.style.display = (tabName === 'kehadiran') ? 'block' : 'none';
             if (secSetting) secSetting.style.display = (tabName === 'setting') ? 'block' : 'none';
+            if (secLogs) secLogs.style.display = (tabName === 'logs') ? 'block' : 'none';
         }
 
         function initSuperadminDashboard() {
@@ -1216,6 +1360,132 @@
                 if (badgeTabPending) badgeTabPending.innerText = pendingCount;
                 updateSelectedPenarikanCount();
             });
+
+            // REALTIME SYSTEM LOGS LISTENER (FITUR BARU)
+            db.ref(`keuangan/logs`).on('value', snapshot => {
+                cachedLogsList = [];
+                snapshot.forEach(child => {
+                    cachedLogsList.push({ id: child.key, ...child.val() });
+                });
+                cachedLogsList.reverse(); // Newest first
+
+                const badgeLogs = document.getElementById("countTabLogs");
+                if (badgeLogs) badgeLogs.innerText = cachedLogsList.length;
+
+                renderLogsTable(cachedLogsList);
+            });
+        }
+
+        // RENDER LOGS TABLE WITH FILTER & SEARCH
+        function renderLogsTable(logsArray) {
+            const tbody = document.getElementById("tabelSystemLogs");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if (logsArray.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">Belum ada histori log aktivitas yang tercatat.</td></tr>`;
+                updateSelectedLogCount();
+                return;
+            }
+
+            logsArray.forEach(item => {
+                let badgeAksi = '<span class="badge-status info">AKTIVITAS</span>';
+                if (item.aksi === "LOGIN") badgeAksi = '<span class="badge-status success"><i class="fa-solid fa-right-to-bracket"></i> LOGIN</span>';
+                else if (item.aksi === "LOGOUT") badgeAksi = '<span class="badge-status rejected"><i class="fa-solid fa-right-from-bracket"></i> LOGOUT</span>';
+                else if (item.aksi === "LOGIN_GAGAL") badgeAksi = '<span class="badge-status rejected"><i class="fa-solid fa-shield-cat"></i> LOGIN GAGAL</span>';
+                else if (item.aksi === "TARIK_TUNAI") badgeAksi = '<span class="badge-status pending"><i class="fa-solid fa-hand-holding-dollar"></i> TARIK TUNAI</span>';
+                else if (item.aksi === "ACC_PENCAIRAN") badgeAksi = '<span class="badge-status success"><i class="fa-solid fa-bolt"></i> ACC PENCAIRAN</span>';
+                else if (item.aksi === "HAPUS_DATA") badgeAksi = '<span class="badge-status rejected"><i class="fa-solid fa-trash"></i> HAPUS DATA</span>';
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="cb-log" value="${item.id}" onclick="updateSelectedLogCount()"></td>
+                    <td><strong>${formatTanggalIndo(item.timestamp)}</strong></td>
+                    <td><strong>${item.userNama}</strong><br><small style="color:#94a3b8;">${item.userHp}</small> <span class="badge-status purple" style="font-size:9px;">${item.role}</span></td>
+                    <td>${badgeAksi}</td>
+                    <td>
+                        <i class="fa-solid fa-mobile-screen" style="color:var(--primary);"></i> <strong>${item.device || 'Mobile/PC'}</strong><br>
+                        <small style="color:#34d399;"><i class="fa-solid fa-battery-three-quarters"></i> Baterai: ${item.baterai || 'Unknown'}</small>
+                    </td>
+                    <td>
+                        <i class="fa-solid fa-wifi" style="color:#f59e0b;"></i> <strong>${item.jaringan || 'Wi-Fi'}</strong><br>
+                        <small style="color:#60a5fa;"><i class="fa-solid fa-network-wired"></i> IP: ${item.ip || 'Local'}</small>
+                    </td>
+                    <td style="font-size:12px; color:#e2e8f0;">${item.deskripsi}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateSelectedLogCount();
+        }
+
+        function filterLogsTable() {
+            const query = (document.getElementById("searchLogInput")?.value || "").toLowerCase();
+            const typeFilter = document.getElementById("filterLogType")?.value || "";
+
+            const filtered = cachedLogsList.filter(item => {
+                const matchQuery = (item.userNama || "").toLowerCase().includes(query) ||
+                                   (item.userHp || "").toLowerCase().includes(query) ||
+                                   (item.deskripsi || "").toLowerCase().includes(query) ||
+                                   (item.ip || "").toLowerCase().includes(query) ||
+                                   (item.device || "").toLowerCase().includes(query);
+                
+                const matchType = typeFilter === "" || item.aksi === typeFilter;
+                return matchQuery && matchType;
+            });
+
+            renderLogsTable(filtered);
+        }
+
+        function toggleSelectAllLog(masterCb) {
+            const cbs = document.querySelectorAll(".cb-log");
+            cbs.forEach(cb => cb.checked = masterCb.checked);
+            updateSelectedLogCount();
+        }
+
+        function updateSelectedLogCount() {
+            const selected = document.querySelectorAll(".cb-log:checked");
+            const master = document.getElementById("selectAllLog");
+            const allCbs = document.querySelectorAll(".cb-log");
+            if (master && allCbs.length > 0) {
+                master.checked = (selected.length === allCbs.length);
+            }
+            const btnHapus = document.getElementById("btnHapusMassalLog");
+            const countSpan = document.getElementById("countSelectedLog");
+            if (btnHapus && countSpan) {
+                countSpan.innerText = selected.length;
+                btnHapus.style.display = selected.length > 0 ? "inline-flex" : "none";
+            }
+        }
+
+        function adminHapusMassalLog() {
+            const selected = document.querySelectorAll(".cb-log:checked");
+            if (selected.length === 0) {
+                alert("❌ Pilih minimal 1 catatan log yang ingin dihapus!");
+                return;
+            }
+
+            const count = selected.length;
+            if (confirm(`⚠️ [VERIFIKASI 1/2] Apakah Anda YAKIN ingin menghapus ${count} histori log aktivitas yang dicentang?`)) {
+                const check = prompt(`🚨 [VERIFIKASI 2/2 - VERIFIKASI GANDA]\nKetik 'HAPUS' (huruf besar semua) untuk memproses penghapusan ${count} catatan log:`);
+                
+                if (check === "HAPUS") {
+                    showLoading(`Menghapus ${count} Histori Log...`, 10);
+                    let updates = {};
+                    selected.forEach(cb => {
+                        updates[`keuangan/logs/${cb.value}`] = null;
+                    });
+                    db.ref().update(updates).then(() => {
+                        hideLoading();
+                        recordSystemLog("Super Administrator", SUPERADMIN_USN, "Superadmin", "HAPUS_DATA", `Menghapus massal ${count} data audit log`);
+                        alert(`✅ VERIFIKASI BERHASIL! ${count} histori log aktivitas berhasil dihapus permanen.`);
+                    }).catch(err => {
+                        hideLoading();
+                        alert("❌ Gagal menghapus log: " + err.message);
+                    });
+                } else {
+                    alert("❌ Verifikasi 2 gagal / dibatalkan. Histori log aman.");
+                }
+            }
         }
 
         // HANDLERS & CONTROL FUNCTIONS
@@ -1227,6 +1497,7 @@
                     allowCairKhusus: allowTarget
                 }).then(() => {
                     hideLoading();
+                    recordSystemLog("Super Administrator", noHp, "Superadmin", "ALLOW_CAIR_KHUSUS", `Akses pencairan khusus akun (${noHp}): ${allowTarget}`);
                     alert(allowTarget ? `🎉 Berhasil! Akun pelatih (${noHp}) sekarang dapat mengeklik tombol Tarik Tunai kapan saja!` : `🔒 Berhasil! Akses pencairan khusus dikunci kembali dan mengikuti tanggal cair global.`);
                 }).catch(err => {
                     hideLoading();
@@ -1305,6 +1576,7 @@
                             updatedAt: new Date().toISOString()
                         }).then(() => {
                             hideLoading();
+                            recordSystemLog("Super Administrator", noHp, "Superadmin", "INPUT_ABSEN", `Edit Kehadiran Coach ${pelatih.nama} (${noHp}): Rp ${honor}`);
                             alert(`✅ Data Kehadiran Coach ${pelatih.nama} berhasil diperbarui!`);
                             closeModalKehadiranAdmin();
                         }).catch(err => {
@@ -1325,6 +1597,7 @@
                             createdAt: new Date().toISOString()
                         }).then(() => {
                             hideLoading();
+                            recordSystemLog("Super Administrator", noHp, "Superadmin", "INPUT_ABSEN", `Input Kehadiran Baru Coach ${pelatih.nama} (${noHp}): Rp ${honor}`);
                             alert(`✅ Kehadiran & Honor Mengajar Coach ${pelatih.nama} berhasil dicatat!`);
                             closeModalKehadiranAdmin();
                         }).catch(err => {
@@ -1350,6 +1623,7 @@
                     processedAt: new Date().toISOString()
                 }).then(() => {
                     hideLoading();
+                    recordSystemLog("Super Administrator", "-", "Superadmin", "ACC_PENCAIRAN", `Proses ACC Penarikan (${keyPenarikan}) -> ${statusTarget.toUpperCase()}`);
                     alert(`⚡ BERHASIL SAT SET! Status pencairan telah diperbarui menjadi ${statusTarget.toUpperCase()}.`);
                 }).catch(err => {
                     hideLoading();
@@ -1363,6 +1637,7 @@
                 showLoading("Menghapus Data Kehadiran...", 10);
                 db.ref(`keuangan/kehadiran/${keyKehadiran}`).remove().then(() => {
                     hideLoading();
+                    recordSystemLog("Super Administrator", "-", "Superadmin", "HAPUS_DATA", `Hapus data kehadiran ID: ${keyKehadiran}`);
                     alert("✅ Data kehadiran berhasil dihapus.");
                 }).catch(err => {
                     hideLoading();
@@ -1375,6 +1650,7 @@
             showLoading("Menyimpan Tanggal Cair...", 10);
             db.ref(`keuangan/config/tglCair`).set(tglBaru).then(() => {
                 hideLoading();
+                recordSystemLog("Super Administrator", "-", "Superadmin", "SETTING_TGL_CAIR", `Atur tanggal cair global -> ${tglBaru || 'Bebas Kapan Saja'}`);
                 alert(tglBaru ? `✅ Berhasil mengatur jadwal pencairan honor pada tanggal: ${formatTanggalIndo(tglBaru)}` : `✅ Jadwal pencairan dikosongkan (pencairan dibuka setiap hari).`);
             }).catch(err => {
                 hideLoading();
@@ -1390,6 +1666,7 @@
                     statusAccount: statusTarget
                 }).then(() => {
                     hideLoading();
+                    recordSystemLog("Super Administrator", noHp, "Superadmin", "AKUN_STATUS", `Ubah status akun (${noHp}) -> ${statusTarget}`);
                     alert(`✅ Akun pelatih berhasil di-${statusTxt}kan!`);
                 }).catch(err => {
                     hideLoading();
@@ -1406,6 +1683,7 @@
                     hideDana: hideTarget
                 }).then(() => {
                     hideLoading();
+                    recordSystemLog("Super Administrator", noHp, "Superadmin", "HIDE_DANA", `Ubah hide dana akun (${noHp}) -> ${hideTarget}`);
                     alert(`✅ Data saldo & honor akun pelatih (${noHp}) berhasil di-${actionTxt}kan! Pelatih tetap bisa login tetapi nominal uang disembunyikan.`);
                 }).catch(err => {
                     hideLoading();
@@ -1426,6 +1704,7 @@
                     showLoading("Memproses Global Hide Dana...", 10);
                     db.ref(`keuangan/config/hideDanaGlobal`).set(target).then(() => {
                         hideLoading();
+                        recordSystemLog("Super Administrator", "-", "Superadmin", "GLOBAL_HIDE_DANA", `Ubah Global Hide Dana -> ${target}`);
                         alert(target ? "🙈 Berhasil! Semua nominal saldo & honor di seluruh akun pelatih telah disembunyikan." : "👁️ Berhasil! Nominal saldo & honor diseluruh akun pelatih kembali ditampilkan.");
                     }).catch(err => {
                         hideLoading();
@@ -1442,6 +1721,7 @@
                     showLoading(`Menghapus Akun Coach ${namaPelatih}...`, 10);
                     db.ref(`keuangan/pelatih/${noHp}`).remove().then(() => {
                         hideLoading();
+                        recordSystemLog("Super Administrator", noHp, "Superadmin", "HAPUS_DATA", `Hapus akun pelatih Coach ${namaPelatih} (${noHp})`);
                         alert(`✅ Akun Coach ${namaPelatih} berhasil dihapus permanen.`);
                     }).catch(err => {
                         hideLoading();
@@ -1494,6 +1774,7 @@
                     });
                     db.ref().update(updates).then(() => {
                         hideLoading();
+                        recordSystemLog("Super Administrator", "-", "Superadmin", "HAPUS_DATA", `Menghapus massal ${count} data rekap kehadiran`);
                         alert(`✅ VERIFIKASI BERHASIL! ${count} data rekap kehadiran berhasil dihapus permanen dari database.`);
                     }).catch(err => {
                         hideLoading();
@@ -1545,6 +1826,7 @@
                     });
                     db.ref().update(updates).then(() => {
                         hideLoading();
+                        recordSystemLog("Super Administrator", "-", "Superadmin", "HAPUS_DATA", `Menghapus massal ${count} akun pelatih`);
                         alert(`✅ VERIFIKASI BERHASIL! ${count} akun pelatih berhasil dihapus permanen.`);
                     }).catch(err => {
                         hideLoading();
@@ -1596,6 +1878,7 @@
                     });
                     db.ref().update(updates).then(() => {
                         hideLoading();
+                        recordSystemLog("Super Administrator", "-", "Superadmin", "HAPUS_DATA", `Menghapus massal ${count} riwayat penarikan dana`);
                         alert(`✅ VERIFIKASI BERHASIL! ${count} data riwayat penarikan berhasil dihapus permanen.`);
                     }).catch(err => {
                         hideLoading();
