@@ -989,15 +989,7 @@
                     timestamp: now
                 };
 
-                // 1. Simpan ke LocalStorage Cache Device
-                try {
-                    let localLogs = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
-                    localLogs.unshift(logData);
-                    if (localLogs.length > 200) localLogs = localLogs.slice(0, 200);
-                    localStorage.setItem("system_logs_cache", JSON.stringify(localLogs));
-                } catch(e) {}
-
-                // 2. SIMPAN PERSISTEN KE MULTIPLE NODE DATABASE FIREBASE
+                // SIMPAN PURE HANYA KE DATABASE FIREBASE CLOUD REALTIME DB
                 try {
                     if (typeof db !== 'undefined' && db) {
                         db.ref(`keuangan/logs/${logId}`).set(logData);
@@ -1008,33 +1000,22 @@
                     }
                 } catch(e) {}
 
-                // Trigger render ulang di UI jika fungsi tersedia
                 if (typeof renderLogsFromAllSources === 'function') {
                     renderLogsFromAllSources();
                 }
 
             } catch(err) {
-                console.error("Gagal mencatat log sistem:", err);
+                console.error("Gagal mencatat log ke Firebase:", err);
             }
         }
 
         function renderLogsFromAllSources() {
             let combined = [];
 
-            // 1. Utamakan data dari Firebase Cloud Realtime DB (Lintas Hosting, Domain & Perangkat HP Beda)
+            // BACA PURE HANYA DARI FIREBASE CLOUD REALTIME DATABASE
             if (window.firebaseLogsCache && Array.isArray(window.firebaseLogsCache)) {
                 combined = [...window.firebaseLogsCache];
             }
-
-            // 2. Gabungkan data LocalStorage perangkat ini jika belum terdaftar
-            try {
-                let localLogs = JSON.parse(localStorage.getItem("system_logs_cache") || "[]");
-                localLogs.forEach(loc => {
-                    if (!combined.some(c => c.id === loc.id || (c.timestamp === loc.timestamp && c.userHp === loc.userHp))) {
-                        combined.push(loc);
-                    }
-                });
-            } catch(e) {}
 
             // Sort descending (Terbaru di paling atas)
             combined.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
@@ -1417,10 +1398,9 @@
             renderLogsFromAllSources();
 
             function syncAllFirebaseLogNodes() {
-                let collectedMap = new Map();
-
-                // 1. Path Global `keuangan/logs`
                 db.ref(`keuangan/logs`).on('value', snap1 => {
+                    let collectedMap = new Map();
+
                     if (snap1.exists()) {
                         snap1.forEach(c => {
                             const val = c.val();
@@ -1460,8 +1440,12 @@
                                 });
                             }
 
-                            window.firebaseLogsCache = Array.from(collectedMap.values());
-                            renderLogsFromAllSources();
+                            if (collectedMap.size === 0) {
+                                recordSystemLog("Super Administrator", SUPERADMIN_USN, "Superadmin", "LOGIN", "Superadmin Control Center berhasil terhubung ke Firebase Cloud Database");
+                            } else {
+                                window.firebaseLogsCache = Array.from(collectedMap.values());
+                                renderLogsFromAllSources();
+                            }
                         });
                     });
                 });
