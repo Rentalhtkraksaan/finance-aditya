@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superadmin Control Portal - Gaji & Absensi Pelatih</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDK compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <style>
+        /* ==========================================================================
+           SUPERADMIN CORE STYLING & DESIGN SYSTEM
+           ========================================================================== */
+        :root {
+            --bg-dark: #090d16;
+            --bg-card: rgba(23, 32, 54, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.4);
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-purple: #8b5cf6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+            --shadow-main: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+
+        button, input, select, textarea, a, div {
+            -webkit-tap-highlight-color: transparent !important;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 15% 15%, rgba(139, 92, 246, 0.18) 0px, transparent 50%),
+                radial-gradient(at 85% 85%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 40px;
+            line-height: 1.5;
+        }
+
+        /* CONTAINER */
+        .app-container {
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 20px 16px;
+        }
+
+        /* NAVBAR / HEADER */
+        .main-header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: var(--radius-xl);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-main);
+        }
+
+        .logo-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-brand i {
+            font-size: 24px;
+            color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.18);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .logo-brand h1 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-brand p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .user-badge-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-info {
+            text-align: right;
+        }
+
+        .badge-info .name {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .badge-info .role {
+            font-size: 11px;
+            color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.15);
+            padding: 2px 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: inline-block;
+        }
+
+        .btn-logout {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-logout:hover {
+            background: var(--accent-rose);
+            color: #fff;
+        }
+
+        /* ADMIN TAB NAVIGATION */
+        .admin-tab-nav {
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 6px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .admin-tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .admin-tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .admin-tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        /* CARDS & GLASSMORPHISM */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-main);
+        }
+
+        /* TABLES */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .custom-table th {
+            background: rgba(15, 23, 42, 0.85);
+            color: var(--text-secondary);
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .custom-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .custom-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* BADGES STATUS */
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-status.pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-status.success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-status.rejected { background: rgba(244, 63, 94, 0.2); color: #f87171; border: 1px solid rgba(244, 63, 94, 0.3); }
+
+        /* BUTTONS */
+        .btn-action-satset {
+            background: var(--accent-emerald);
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-action-satset:hover {
+            background: #34d399;
+        }
+
+        .btn-action-danger {
+            background: rgba(244, 63, 94, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-action-danger:hover {
+            background: var(--accent-rose);
+            color: #fff;
+        }
+
+        .btn-submit-form {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-submit-form:hover {
+            background: #2563eb;
+        }
+
+        /* MODALS & FORMS */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 480px;
+            max-height: 88vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 24px;
+            box-shadow: var(--shadow-main);
+            animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-box::-webkit-scrollbar {
+            width: 5px;
+        }
+        .modal-box::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        .modal-box::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.4);
+            border-radius: 4px;
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .btn-close-modal {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        select.form-control option,
+        .form-control option {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 8px;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* GLOBAL FAST LOADING MODAL OVERLAY */
+        .loading-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(9, 13, 22, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-backdrop.active {
+            display: flex;
+        }
+
+        .loading-box {
+            background: #0f172a;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: var(--radius-xl);
+            padding: 32px 40px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            max-width: 360px;
+            width: 90%;
+            animation: modalPop 0.25s ease-out;
+        }
+
+        .spinner-icon {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(59, 130, 246, 0.15);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spinSlow 0.8s linear infinite;
+            margin: 0 auto 16px auto;
+        }
+
+        @keyframes spinSlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .loading-subtext {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .loading-progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .loading-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent-emerald));
+            transition: width 0.2s linear;
+        }
+
+        /* MOBILE RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 12px 10px;
+            }
+
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+                padding: 16px;
+            }
+
+            .user-badge-header {
+                width: 100%;
+                justify-content: space-between;
+                border-top: 1px solid var(--border-color);
+                padding-top: 12px;
+            }
+
+            .glass-card {
+                padding: 16px;
+                border-radius: var(--radius-lg);
+            }
+
+            .modal-backdrop {
+                padding: 10px;
+                align-items: flex-start;
+            }
+
+            .modal-box {
+                padding: 18px 14px;
+                max-width: 100%;
+                max-height: 85vh;
+                margin: 10px auto;
+                overflow-y: auto;
+            }
+
+            .admin-tab-nav {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 4px;
+                gap: 6px;
+            }
+
+            .admin-tab-btn {
+                flex: 0 0 auto;
+                min-width: max-content;
+                padding: 10px 14px;
+                font-size: 12px;
+            }
+
+            .table-responsive {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .custom-table th, .custom-table td {
+                padding: 10px 10px;
+                font-size: 12px;
+            }
+
+            .btn-action-satset, .btn-action-danger {
+                padding: 8px 10px;
+                font-size: 11px;
+            }
+
+            .form-control {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- HEADER SUPERADMIN -->
+        <header class="main-header">
+            <div class="logo-brand">
+                <i class="fa-solid fa-crown"></i>
+                <div>
+                    <h1>Portal Superadmin Control Center</h1>
+                    <p>Manajemen Master Akun Pelatih, Absensi, Honor & ACC Pencairan</p>
+                </div>
+            </div>
+            <div class="user-badge-header">
+                <div class="badge-info">
+                    <div class="name">Super Administrator</div>
+                    <div class="role">Kontrol Penuh System</div>
+                </div>
+                <!-- LOGOUT REDIRECT KE JADWAL.HTML -->
+                <button class="btn-logout" onclick="logoutSuperadmin()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Keluar
+                </button>
+            </div>
+        </header>
+
+        <!-- TAB NAVIGATION ADMIN -->
+        <nav class="admin-tab-nav">
+            <button class="admin-tab-btn active" onclick="switchAdminTab('pelatih', this)">
+                <i class="fa-solid fa-users"></i> Master Akun Pelatih
+            </button>
+            <button class="admin-tab-btn" onclick="switchAdminTab('penarikan', this)">
+                <i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> Pengajuan Pencairan (<span id="countTabPendingPenarikan">0</span>)
+            </button>
+            <button class="admin-tab-btn" onclick="switchAdminTab('kehadiran', this)">
+                <i class="fa-solid fa-calendar-plus"></i> Rekap Kehadiran
+            </button>
+            <button class="admin-tab-btn" onclick="switchAdminTab('setting', this)">
+                <i class="fa-regular fa-calendar-check"></i> Setting Tanggal Cair
+            </button>
+        </nav>
+
+        <!-- 1. DAFTAR MASTER PELATIH (TAB UTAMA DEFAULT) -->
+        <section id="secMasterPelatih" class="glass-card" style="display:block;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h3 style="font-size:16px; font-weight:700;"><i class="fa-solid fa-users" style="color:var(--accent-purple);"></i> Master Data Akun Pelatih Terdaftar</h3>
+                    <p style="font-size:12px; color:var(--text-secondary);">Kelola status aktif/nonaktif, sembunyikan dana (hide dana), dan hapus akun pelatih</p>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <button id="btnToggleHideDanaGlobal" class="btn-action-satset" style="background:#6366f1; color:#fff; padding:10px 16px; font-size:13px;" onclick="adminToggleHideDanaGlobal()">
+                        <i class="fa-solid fa-eye"></i> Sembunyikan Dana SEMUA Akun Pelatih
+                    </button>
+                    <button id="btnHapusMassalPelatih" class="btn-action-danger" style="display:none; padding:10px 16px; font-size:13px;" onclick="adminHapusMassalPelatih()">
+                        <i class="fa-solid fa-user-xmark"></i> Hapus Akun Terpilih (<span id="countSelectedPelatih">0</span>)
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;"><input type="checkbox" id="selectAllPelatih" onclick="toggleSelectAllPelatih(this)"></th>
+                            <th>Profil & Nama Pelatih</th>
+                            <th>No HP (Username)</th>
+                            <th>Password (PIN)</th>
+                            <th>Status & Fitur Akun</th>
+                            <th>Rekening Default Pelatih</th>
+                            <th>Aksi Kontrol Akun</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelMasterPelatih">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. FITUR UTAMA PENCAIRAN TUNAI SAT SET -->
+        <section id="secPencairan" class="glass-card" style="border:1px solid rgba(16, 185, 129, 0.4); display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:18px; font-weight:800; color:var(--text-primary);">
+                        <i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> Pengajuan Pencairan Dana Pelatih (Sat Set ACC)
+                    </h2>
+                    <p style="font-size:13px; color:var(--text-secondary);">Seluruh form pengajuan penarikan dari pelatih akan muncul di sini. Klik setujui untuk menyelesaikan pencairan.</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <button id="btnHapusMassalPenarikan" class="btn-action-danger" style="display:none; padding:8px 14px; font-size:12px;" onclick="adminHapusMassalPenarikan()">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Terpilih (<span id="countSelectedPenarikan">0</span>)
+                    </button>
+                    <div style="background:rgba(245, 158, 11, 0.15); padding:8px 16px; border-radius:12px; border:1px solid rgba(245, 158, 11, 0.3); color:#fbbf24; font-weight:700; font-size:13px;">
+                        Pending: <span id="countPendingPenarikan">0</span> Antrean
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;"><input type="checkbox" id="selectAllPenarikan" onclick="toggleSelectAllPenarikan(this)"></th>
+                            <th>Waktu Pengajuan</th>
+                            <th>Nama & No HP Pelatih</th>
+                            <th>Data Bank & Rekening Pelatih</th>
+                            <th>Nominal Cair</th>
+                            <th>Status saat ini</th>
+                            <th>Aksi Kilat (Sat Set)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelAdminPenarikan">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. KELOLA ABSENSI & KEHADIRAN MENGAJAR -->
+        <section id="secKehadiran" class="glass-card" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h3 style="font-size:16px; font-weight:700;"><i class="fa-solid fa-calendar-plus" style="color:var(--primary);"></i> Input & Rekap Kehadiran Mengajar Pelatih</h3>
+                    <p style="font-size:12px; color:var(--text-secondary);">Catat tanggal, hari, durasi jam, dan besaran honor mengajar per pelatih</p>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <button id="btnHapusMassalKehadiran" class="btn-action-danger" style="display:none; padding:10px 16px; font-size:13px;" onclick="adminHapusMassalKehadiran()">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Terpilih (<span id="countSelectedKehadiran">0</span>)
+                    </button>
+                    <button class="btn-submit-form" style="width:auto; margin-top:0; padding:10px 18px;" onclick="openModalKehadiranAdmin()">
+                        <i class="fa-solid fa-plus"></i> Input Absen & Honor Baru
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;"><input type="checkbox" id="selectAllKehadiran" onclick="toggleSelectAllKehadiran(this)"></th>
+                            <th>Tanggal & Hari</th>
+                            <th>Pelatih</th>
+                            <th>Agenda / Kegiatan</th>
+                            <th>Durasi Sesi</th>
+                            <th>Honor Dicatat</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelAdminKehadiran">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. SETTING TANGGAL PENCAIRAN ADMIN -->
+        <section id="secSettingCair" class="glass-card" style="border:1px solid rgba(245, 158, 11, 0.4); margin-bottom: 20px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <h3 style="font-size:16px; font-weight:800; color:var(--text-primary);">
+                        <i class="fa-regular fa-calendar-check" style="color:#f59e0b;"></i> Atur Tanggal Jadwal Pencairan Honor
+                    </h3>
+                    <p style="font-size:12px; color:var(--text-secondary);">
+                        Pelatih hanya dapat mengeklik tombol <strong>Tarik Tunai</strong> pada/setelah tanggal yang diatur di bawah ini.
+                    </p>
+                </div>
+                <form onsubmit="handleSaveTglCair(event)" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <input type="date" id="adminSettingTglCair" class="form-control" style="width:auto;" required>
+                    <button type="submit" class="btn-action-satset" style="padding:10px 16px; font-size:13px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Simpan Tanggal Cair
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- MODAL INPUT & EDIT KEHADIRAN & GAJI PELATIH -->
+    <div id="modalKehadiranAdmin" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="titleModalKehadiran"><i class="fa-solid fa-clipboard-user" style="color:var(--primary);"></i> Catat Kehadiran & Honor Mengajar</h3>
+                <button class="btn-close-modal" onclick="closeModalKehadiranAdmin()">&times;</button>
+            </div>
+            <form onsubmit="handleAdminSubmitKehadiran(event)">
+                <input type="hidden" id="editKehadiranKey" value="">
+                <div class="form-group">
+                    <label>Pilih Pelatih</label>
+                    <select id="selectPelatihAdmin" class="form-control" required>
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Mengajar</label>
+                    <input type="date" id="inputTanggalAdmin" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama Agenda / Kegiatan</label>
+                    <input type="text" id="inputKegiatanAdmin" class="form-control" value="Mengajar Latihan Regular" required>
+                </div>
+                <div class="form-group">
+                    <label>Durasi Sesi (Jam)</label>
+                    <input type="number" id="inputDurasiAdmin" class="form-control" value="2" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Besaran Honor / Gaji Sesi Ini (Rp)</label>
+                    <input type="number" id="inputHonorAdmin" class="form-control" placeholder="Contoh: 150000" required>
+                </div>
+                <button type="submit" id="btnSubmitKehadiran" class="btn-submit-form"><i class="fa-solid fa-floppy-disk"></i> Simpan Data Kehadiran</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT EMBEDDED -->
+    <script>
+        // Konfigurasi Firebase Realtime Database Resmi
+        const firebaseConfig = {
+          apiKey: "AIzaSyCX_lNiA1LcGBBZe7ouQ16mdIGzyGyQtIY",
+          authDomain: "gaji-36cc2.firebaseapp.com",
+          projectId: "gaji-36cc2",
+          storageBucket: "gaji-36cc2.firebasestorage.app",
+          messagingSenderId: "939605055331",
+          appId: "1:939605055331:web:49453cf6ff9dbe36032556",
+          measurementId: "G-66Y7NTLCYY"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // LOGOUT LOGIC -> REDIRECT KE JADWAL.HTML
+        function logoutSuperadmin() {
+            sessionStorage.removeItem("pelatih_admin_auth");
+            sessionStorage.removeItem("superadmin_auth");
+            window.location.href = "jadwal.html";
+        }
+
+        // Helper Format Rupiah
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+        }
+
+        // Helper Format Tanggal Indonesia
+        function formatTanggalIndo(dateStr) {
+            if (!dateStr) return "-";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][d.getDay()];
+            const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"][d.getMonth()];
+            return `${hari}, ${d.getDate()} ${bulan} ${d.getFullYear()}`;
+        }
+
+        // FAST LOADING SYSTEM (MAX 10 DETIK)
+        let loadingTimer = null;
+        let loadingInterval = null;
+
+        function ensureLoadingModalExists() {
+            if (!document.getElementById("globalLoadingModal")) {
+                const div = document.createElement("div");
+                div.id = "globalLoadingModal";
+                div.className = "loading-backdrop";
+                div.innerHTML = `
+                    <div class="loading-box">
+                        <div class="spinner-icon"></div>
+                        <div class="loading-text" id="globalLoadingTitle">Memproses Data...</div>
+                        <div class="loading-subtext" id="globalLoadingSub">Mohon tunggu sebentar (Max 10 detik)</div>
+                        <div class="loading-progress-bar">
+                            <div class="loading-progress-fill" id="globalLoadingProgress"></div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(div);
+            }
+        }
+
+        function showLoading(title = "Memproses Data...", maxSeconds = 10) {
+            ensureLoadingModalExists();
+            const modal = document.getElementById("globalLoadingModal");
+            const titleEl = document.getElementById("globalLoadingTitle");
+            const progressEl = document.getElementById("globalLoadingProgress");
+            
+            if (titleEl) titleEl.innerText = title;
+            if (progressEl) progressEl.style.width = "0%";
+            if (modal) modal.classList.add("active");
+
+            if (loadingTimer) clearTimeout(loadingTimer);
+            if (loadingInterval) clearInterval(loadingInterval);
+
+            let startTime = Date.now();
+            let durationMs = maxSeconds * 1000;
+
+            loadingInterval = setInterval(() => {
+                let elapsed = Date.now() - startTime;
+                let pct = Math.min(100, (elapsed / durationMs) * 100);
+                if (progressEl) progressEl.style.width = `${pct}%`;
+            }, 100);
+
+            loadingTimer = setTimeout(() => {
+                hideLoading();
+                alert("⚠️ Waktu koneksi habis (Timeout 10s). Mohon periksa jaringan internet Anda dan coba lagi.");
+            }, durationMs);
+        }
+
+        function hideLoading() {
+            if (loadingTimer) {
+                clearTimeout(loadingTimer);
+                loadingTimer = null;
+            }
+            if (loadingInterval) {
+                clearInterval(loadingInterval);
+                loadingInterval = null;
+            }
+            const modal = document.getElementById("globalLoadingModal");
+            if (modal) modal.classList.remove("active");
+        }
+
+        // TAB SWITCHER
+        function switchAdminTab(tabName, btnEl) {
+            document.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("active"));
+            if (btnEl) btnEl.classList.add("active");
+
+            const secMaster = document.getElementById("secMasterPelatih");
+            const secPencairan = document.getElementById("secPencairan");
+            const secKehadiran = document.getElementById("secKehadiran");
+            const secSetting = document.getElementById("secSettingCair");
+
+            if (secMaster) secMaster.style.display = (tabName === 'pelatih') ? 'block' : 'none';
+            if (secPencairan) secPencairan.style.display = (tabName === 'penarikan') ? 'block' : 'none';
+            if (secKehadiran) secKehadiran.style.display = (tabName === 'kehadiran') ? 'block' : 'none';
+            if (secSetting) secSetting.style.display = (tabName === 'setting') ? 'block' : 'none';
+        }
+
+        // INIT SUPERADMIN DASHBOARD
+        document.addEventListener("DOMContentLoaded", () => {
+            initSuperadminDashboard();
+            const today = new Date().toISOString().split('T')[0];
+            if (document.getElementById("inputTanggalAdmin")) {
+                document.getElementById("inputTanggalAdmin").value = today;
+            }
+        });
+
+        function initSuperadminDashboard() {
+            // Realtime Tanggal Cair Config
+            db.ref(`keuangan/config/tglCair`).on('value', snapshot => {
+                const tglInput = document.getElementById("adminSettingTglCair");
+                if (tglInput) tglInput.value = snapshot.val() || "";
+            });
+
+            // Realtime Global Hide Dana Config
+            db.ref(`keuangan/config/hideDanaGlobal`).on('value', snapshot => {
+                const isHideGlobal = snapshot.val() === true;
+                const btnGlobal = document.getElementById("btnToggleHideDanaGlobal");
+                if (btnGlobal) {
+                    if (isHideGlobal) {
+                        btnGlobal.style.background = "#f59e0b";
+                        btnGlobal.style.color = "#000";
+                        btnGlobal.innerHTML = `<i class="fa-solid fa-eye-slash"></i> Global Hide Dana: AKTIF (Uang Disembunyikan u/ Semua)`;
+                    } else {
+                        btnGlobal.style.background = "#6366f1";
+                        btnGlobal.style.color = "#fff";
+                        btnGlobal.innerHTML = `<i class="fa-solid fa-eye"></i> Sembunyikan Dana SEMUA Akun Pelatih`;
+                    }
+                }
+            });
+
+            // Realtime Master Pelatih
+            db.ref(`keuangan/pelatih`).on('value', snapshot => {
+                const selectPelatih = document.getElementById("selectPelatihAdmin");
+                const listPelatihTable = document.getElementById("tabelMasterPelatih");
+                if (selectPelatih) selectPelatih.innerHTML = `<option value="">-- Pilih Pelatih --</option>`;
+                if (listPelatihTable) listPelatihTable.innerHTML = "";
+
+                snapshot.forEach(child => {
+                    const p = child.val();
+                    const isAktif = p.statusAccount !== "disabled";
+                    const isHideAccount = p.hideDana === true;
+
+                    if (selectPelatih && isAktif) {
+                        selectPelatih.innerHTML += `<option value="${p.noHp}">${p.nama} (${p.noHp})</option>`;
+                    }
+
+                    if (listPelatihTable) {
+                        const badgeStatus = isAktif 
+                            ? '<span class="badge-status success">Aktif</span>'
+                            : '<span class="badge-status rejected">Nonaktif</span>';
+
+                        const badgeHideDana = isHideAccount
+                            ? '<span class="badge-status pending" style="margin-left:4px;"><i class="fa-solid fa-eye-slash"></i> Dana Hidden</span>'
+                            : '';
+
+                        const btnToggleStatus = isAktif
+                            ? `<button class="btn-action-danger" style="padding:4px 8px; font-size:11px;" onclick="adminToggleStatusPelatih('${p.noHp}', 'disabled')"><i class="fa-solid fa-ban"></i> Nonaktifkan</button>`
+                            : `<button class="btn-action-satset" style="padding:4px 8px; font-size:11px;" onclick="adminToggleStatusPelatih('${p.noHp}', 'active')"><i class="fa-solid fa-check"></i> Aktifkan</button>`;
+
+                        const btnToggleHideDana = isHideAccount
+                            ? `<button class="btn-action-satset" style="background:#8b5cf6; color:#fff; padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminToggleHideDanaPelatih('${p.noHp}', false)"><i class="fa-solid fa-eye"></i> Show Dana</button>`
+                            : `<button class="btn-action-satset" style="background:rgba(139, 92, 246, 0.2); color:#c084fc; border:1px solid rgba(139, 92, 246, 0.4); padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminToggleHideDanaPelatih('${p.noHp}', true)"><i class="fa-solid fa-eye-slash"></i> Hide Dana</button>`;
+
+                        const btnHapus = `<button class="btn-action-danger" style="padding:4px 8px; font-size:11px; margin-left:4px;" onclick="adminHapusPelatih('${p.noHp}', '${p.nama.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i> Hapus</button>`;
+
+                        const fotoHTML = p.fotoUrl 
+                            ? `<div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${p.fotoUrl}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #10b981; cursor:pointer;" onclick="previewFotoPelatihAdmin('${p.fotoUrl}', '${p.nama.replace(/'/g, "\\'")}')" title="Klik untuk memperbesar foto">
+                                <div>
+                                    <strong style="font-size:13px;">${p.nama}</strong><br>
+                                    <span class="badge-status success" style="font-size:9px; padding:1px 6px;"><i class="fa-solid fa-camera"></i> Foto Terpasang</span>
+                                </div>
+                               </div>`
+                            : `<div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:40px; height:40px; border-radius:50%; background:rgba(100, 116, 139, 0.2); color:#64748b; display:flex; align-items:center; justify-content:center; border:1px dashed #64748b; font-size:16px;">
+                                    <i class="fa-solid fa-user-xmark"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size:13px;">${p.nama}</strong><br>
+                                    <span class="badge-status pending" style="font-size:9px; padding:1px 6px; background:rgba(100,116,139,0.15); color:#94a3b8; border-color:rgba(100,116,139,0.3);"><i class="fa-solid fa-circle-minus"></i> Belum Ada Foto</span>
+                                </div>
+                               </div>`;
+
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td><input type="checkbox" class="cb-pelatih" value="${p.noHp}" data-nama="${p.nama}" onclick="updateSelectedPelatihCount()"></td>
+                            <td>${fotoHTML}</td>
+                            <td>${p.noHp}</td>
+                            <td><code style="background:rgba(59, 130, 246, 0.15); color:#60a5fa; padding:2px 8px; border-radius:4px; font-weight:700;">${p.tglLahir || '-'}</code></td>
+                            <td>${badgeStatus} ${badgeHideDana}</td>
+                            <td>${p.bankDefault ? `${p.bankDefault} - ${p.norekDefault} a.n ${p.pemilikDefault}` : '<span style="color:#64748b;">Belum set</span>'}</td>
+                            <td>${btnToggleStatus} ${btnToggleHideDana} ${btnHapus}</td>
+                        `;
+                        listPelatihTable.appendChild(tr);
+                    }
+                });
+                updateSelectedPelatihCount();
+            });
+
+            // Realtime Kehadiran
+            db.ref(`keuangan/kehadiran`).on('value', snapshot => {
+                const tbody = document.getElementById("tabelAdminKehadiran");
+                if (!tbody) return;
+                tbody.innerHTML = "";
+
+                let list = [];
+                snapshot.forEach(child => {
+                    list.push({ id: child.key, ...child.val() });
+                });
+                list.reverse();
+
+                list.forEach(item => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><input type="checkbox" class="cb-kehadiran" value="${item.id}" onclick="updateSelectedKehadiranCount()"></td>
+                        <td><strong>${formatTanggalIndo(item.tanggal)}</strong></td>
+                        <td>${item.namaPelatih} (${item.noHp})</td>
+                        <td>${item.kegiatan}</td>
+                        <td>${item.durasiJam} Jam</td>
+                        <td style="color:#10b981; font-weight:700;">${formatRupiah(item.honor)}</td>
+                        <td>
+                            <button class="btn-action-satset" style="background:#f59e0b; color:#000;" onclick="openEditKehadiranModal('${item.id}', '${item.noHp}', '${item.tanggal}', '${item.kegiatan.replace(/'/g, "\\'")}', ${item.durasiJam}, ${item.honor})">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button class="btn-action-danger" style="margin-left:4px;" onclick="hapusKehadiranAdmin('${item.id}')">
+                                <i class="fa-solid fa-trash"></i> Hapus
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                updateSelectedKehadiranCount();
+            });
+
+            // Realtime Penarikan Dana
+            db.ref(`keuangan/penarikan`).on('value', snapshot => {
+                const tbody = document.getElementById("tabelAdminPenarikan");
+                if (!tbody) return;
+                tbody.innerHTML = "";
+
+                let pendingCount = 0;
+                snapshot.forEach(child => {
+                    const item = child.val();
+                    if (item.status === "menunggu") pendingCount++;
+
+                    let statusBadge = item.status === "disetujui" 
+                        ? '<span class="badge-status success">DITRANSFER (SELESAI)</span>'
+                        : (item.status === "ditolak" ? '<span class="badge-status rejected">DITOLAK</span>' : '<span class="badge-status pending">MENUNGGU ACC ADMIN</span>');
+
+                    let actionBtns = item.status === "menunggu" ? `
+                        <button class="btn-action-satset" onclick="accPenarikanSatSet('${child.key}', 'disetujui')">
+                            <i class="fa-solid fa-bolt"></i> SETUJUI & CAIRKAN (SAT SET)
+                        </button>
+                        <button class="btn-action-danger" style="margin-left:6px;" onclick="accPenarikanSatSet('${child.key}', 'ditolak')">
+                            Tolak
+                        </button>
+                    ` : `<span style="color:#64748b; font-size:12px;">Selesai Diproses</span>`;
+
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><input type="checkbox" class="cb-penarikan" value="${child.key}" onclick="updateSelectedPenarikanCount()"></td>
+                        <td>${formatTanggalIndo(item.waktuPengajuan)}</td>
+                        <td><strong>${item.namaPelatih}</strong><br><small style="color:#94a3b8;">${item.noHp}</small></td>
+                        <td style="background:rgba(59, 130, 246, 0.1); border-radius:8px;">
+                            <strong>${item.bank}</strong><br>
+                            <span style="color:#60a5fa; font-size:14px; font-weight:700;">${item.norek}</span><br>
+                            <small>a.n ${item.namaPemilik}</small>
+                        </td>
+                        <td style="color:#34d399; font-weight:800; font-size:15px;">${formatRupiah(item.nominal)}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionBtns}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                const badgePending = document.getElementById("countPendingPenarikan");
+                if (badgePending) badgePending.innerText = pendingCount;
+                const badgeTabPending = document.getElementById("countTabPendingPenarikan");
+                if (badgeTabPending) badgeTabPending.innerText = pendingCount;
+                updateSelectedPenarikanCount();
+            });
+        }
+
+        // HANDLERS
+        function openModalKehadiranAdmin() {
+            document.getElementById("editKehadiranKey").value = "";
+            document.getElementById("titleModalKehadiran").innerHTML = `<i class="fa-solid fa-clipboard-user" style="color:var(--primary);"></i> Catat Kehadiran & Honor Mengajar`;
+            document.getElementById("btnSubmitKehadiran").innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Simpan Data Kehadiran`;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById("inputTanggalAdmin").value = today;
+            document.getElementById("inputKegiatanAdmin").value = "Mengajar Latihan Regular";
+            document.getElementById("inputDurasiAdmin").value = "2";
+            document.getElementById("inputHonorAdmin").value = "";
+            document.getElementById("modalKehadiranAdmin").classList.add("active");
+        }
+
+        function openEditKehadiranModal(key, hp, tgl, keg, dur, honor) {
+            document.getElementById("editKehadiranKey").value = key;
+            document.getElementById("titleModalKehadiran").innerHTML = `<i class="fa-solid fa-pen-to-square" style="color:var(--accent-amber);"></i> Edit Data Kehadiran & Honor`;
+            document.getElementById("btnSubmitKehadiran").innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Perbarui Data Kehadiran`;
+            
+            document.getElementById("selectPelatihAdmin").value = hp;
+            document.getElementById("inputTanggalAdmin").value = tgl;
+            document.getElementById("inputKegiatanAdmin").value = keg;
+            document.getElementById("inputDurasiAdmin").value = dur;
+            document.getElementById("inputHonorAdmin").value = honor;
+            
+            document.getElementById("modalKehadiranAdmin").classList.add("active");
+        }
+
+        function closeModalKehadiranAdmin() {
+            document.getElementById("modalKehadiranAdmin").classList.remove("active");
+        }
+
+        function handleAdminSubmitKehadiran(e) {
+            e.preventDefault();
+            const editKey = document.getElementById("editKehadiranKey").value;
+            const hp = document.getElementById("selectPelatihAdmin").value;
+            const tgl = document.getElementById("inputTanggalAdmin").value;
+            const keg = document.getElementById("inputKegiatanAdmin").value;
+            const dur = document.getElementById("inputDurasiAdmin").value;
+            const hnr = document.getElementById("inputHonorAdmin").value;
+
+            adminTambahKehadiran(hp, tgl, keg, dur, hnr, editKey);
+        }
+
+        function handleSaveTglCair(e) {
+            e.preventDefault();
+            const tgl = document.getElementById("adminSettingTglCair").value;
+            adminSimpanTanggalCair(tgl);
+        }
+
+        function adminTambahKehadiran(noHp, tanggal, kegiatan, durasiJam, honor, editKey = "") {
+            if (!noHp || !tanggal || !honor) {
+                alert("❌ Pilih pelatih, tanggal, dan nominal honor mengajar!");
+                return;
+            }
+
+            showLoading("Menyimpan Data Kehadiran...", 10);
+            db.ref(`keuangan/pelatih/${noHp}`).once('value', snapshot => {
+                if (snapshot.exists()) {
+                    const pelatih = snapshot.val();
+                    
+                    if (editKey) {
+                        db.ref(`keuangan/kehadiran/${editKey}`).update({
+                            noHp: noHp,
+                            namaPelatih: pelatih.nama,
+                            tanggal: tanggal,
+                            kegiatan: kegiatan || "Mengajar Latihan",
+                            durasiJam: Number(durasiJam || 2),
+                            honor: Number(honor),
+                            updatedAt: new Date().toISOString()
+                        }).then(() => {
+                            hideLoading();
+                            alert(`✅ Data Kehadiran Coach ${pelatih.nama} berhasil diperbarui!`);
+                            closeModalKehadiranAdmin();
+                        }).catch(err => {
+                            hideLoading();
+                            alert("❌ Gagal menyimpan: " + err.message);
+                        });
+                    } else {
+                        const refKehadiran = db.ref(`keuangan/kehadiran`).push();
+                        refKehadiran.set({
+                            id: refKehadiran.key,
+                            noHp: noHp,
+                            namaPelatih: pelatih.nama,
+                            tanggal: tanggal,
+                            kegiatan: kegiatan || "Mengajar Latihan",
+                            durasiJam: Number(durasiJam || 2),
+                            statusAbsen: "Hadir",
+                            honor: Number(honor),
+                            createdAt: new Date().toISOString()
+                        }).then(() => {
+                            hideLoading();
+                            alert(`✅ Kehadiran & Honor Mengajar Coach ${pelatih.nama} berhasil dicatat!`);
+                            closeModalKehadiranAdmin();
+                        }).catch(err => {
+                            hideLoading();
+                            alert("❌ Gagal menyimpan: " + err.message);
+                        });
+                    }
+                } else {
+                    hideLoading();
+                    alert("❌ Akun pelatih tidak ditemukan!");
+                }
+            }).catch(err => {
+                hideLoading();
+                alert("❌ Koneksi terhambat: " + err.message);
+            });
+        }
+
+        function accPenarikanSatSet(keyPenarikan, statusTarget) {
+            if (confirm(`Apakah Anda yakin ingin memproses pengajuan pencairan ini menjadi: ${statusTarget.toUpperCase()}?`)) {
+                showLoading(`Memproses ACC Status (${statusTarget.toUpperCase()})...`, 10);
+                db.ref(`keuangan/penarikan/${keyPenarikan}`).update({
+                    status: statusTarget,
+                    processedAt: new Date().toISOString()
+                }).then(() => {
+                    hideLoading();
+                    alert(`⚡ BERHASIL SAT SET! Status pencairan telah diperbarui menjadi ${statusTarget.toUpperCase()}.`);
+                }).catch(err => {
+                    hideLoading();
+                    alert("❌ Gagal memproses: " + err.message);
+                });
+            }
+        }
+
+        function hapusKehadiranAdmin(keyKehadiran) {
+            if (confirm("Hapus data kehadiran ini? Honor terkait akan dikurangi secara otomatis.")) {
+                showLoading("Menghapus Data Kehadiran...", 10);
+                db.ref(`keuangan/kehadiran/${keyKehadiran}`).remove().then(() => {
+                    hideLoading();
+                    alert("✅ Data kehadiran berhasil dihapus.");
+                }).catch(err => {
+                    hideLoading();
+                    alert("❌ Gagal menghapus: " + err.message);
+                });
+            }
+        }
+
+        function adminSimpanTanggalCair(tglBaru) {
+            showLoading("Menyimpan Tanggal Cair...", 10);
+            db.ref(`keuangan/config/tglCair`).set(tglBaru).then(() => {
+                hideLoading();
+                alert(tglBaru ? `✅ Berhasil mengatur jadwal pencairan honor pada tanggal: ${formatTanggalIndo(tglBaru)}` : `✅ Jadwal pencairan dikosongkan (pencairan dibuka setiap hari).`);
+            }).catch(err => {
+                hideLoading();
+                alert("❌ Gagal menyimpan jadwal pencairan: " + err.message);
+            });
+        }
+
+        function adminToggleStatusPelatih(noHp, statusTarget) {
+            const statusTxt = statusTarget === "disabled" ? "NONAKTIFKAN" : "AKTIFKAN";
+            if (confirm(`Apakah Anda yakin ingin me-${statusTxt} akun pelatih (${noHp})?`)) {
+                showLoading(`Memproses Status Akun (${statusTxt})...`, 10);
+                db.ref(`keuangan/pelatih/${noHp}`).update({
+                    statusAccount: statusTarget
+                }).then(() => {
+                    hideLoading();
+                    alert(`✅ Akun pelatih berhasil di-${statusTxt}kan!`);
+                }).catch(err => {
+                    hideLoading();
+                    alert("❌ Gagal memproses: " + err.message);
+                });
+            }
+        }
+
+        function adminToggleHideDanaPelatih(noHp, hideTarget) {
+            const actionTxt = hideTarget ? "SEMBUNYIKAN" : "TAMPILKAN";
+            if (confirm(`Apakah Anda yakin ingin me-${actionTxt} semua data saldo & nominal honor pada akun pelatih (${noHp})?`)) {
+                showLoading(`Memproses Status Hide Dana (${actionTxt})...`, 10);
+                db.ref(`keuangan/pelatih/${noHp}`).update({
+                    hideDana: hideTarget
+                }).then(() => {
+                    hideLoading();
+                    alert(`✅ Data saldo & honor akun pelatih (${noHp}) berhasil di-${actionTxt}kan! Pelatih tetap bisa login tetapi nominal uang disembunyikan.`);
+                }).catch(err => {
+                    hideLoading();
+                    alert("❌ Gagal memproses: " + err.message);
+                });
+            }
+        }
+
+        function adminToggleHideDanaGlobal() {
+            db.ref(`keuangan/config/hideDanaGlobal`).once('value', snapshot => {
+                const current = snapshot.val() === true;
+                const target = !current;
+                const msg = target 
+                    ? "⚠️ SEMBUNYIKAN SEMUA DANA:\nApakah Anda yakin ingin SEMBUNYIKAN nominal saldo & honor pada SEMUA AKUN PELATIH?"
+                    : "✅ TAMPILKAN SEMUA DANA:\nApakah Anda yakin ingin MENAMPILKAN KEMBALI nominal saldo & honor pada semua akun pelatih?";
+                
+                if (confirm(msg)) {
+                    showLoading("Memproses Global Hide Dana...", 10);
+                    db.ref(`keuangan/config/hideDanaGlobal`).set(target).then(() => {
+                        hideLoading();
+                        alert(target ? "🙈 Berhasil! Semua nominal saldo & honor di seluruh akun pelatih telah disembunyikan." : "👁️ Berhasil! Nominal saldo & honor diseluruh akun pelatih kembali ditampilkan.");
+                    }).catch(err => {
+                        hideLoading();
+                        alert("❌ Gagal memproses: " + err.message);
+                    });
+                }
+            });
+        }
+
+        function adminHapusPelatih(noHp, namaPelatih) {
+            if (confirm(`⚠️ WARN (Verifikasi 1): Apakah Anda yakin ingin MENGHAPUS PERMANEN akun pelatih Coach ${namaPelatih} (${noHp})?`)) {
+                const check = prompt(`⚠️ VERIFIKASI 2/2 KEAMANAN:\nKetik 'HAPUS' (huruf besar semua) untuk menghapus akun Coach ${namaPelatih} secara permanen:`);
+                if (check === "HAPUS") {
+                    showLoading(`Menghapus Akun Coach ${namaPelatih}...`, 10);
+                    db.ref(`keuangan/pelatih/${noHp}`).remove().then(() => {
+                        hideLoading();
+                        alert(`✅ Akun Coach ${namaPelatih} berhasil dihapus permanen.`);
+                    }).catch(err => {
+                        hideLoading();
+                        alert("❌ Gagal menghapus: " + err.message);
+                    });
+                } else {
+                    alert("❌ Verifikasi kedua gagal. Penghapusan dibatalkan.");
+                }
+            }
+        }
+
+        // BATCH SELECT ALL & DELETE LOGIC
+        function toggleSelectAllKehadiran(masterCb) {
+            const cbs = document.querySelectorAll(".cb-kehadiran");
+            cbs.forEach(cb => cb.checked = masterCb.checked);
+            updateSelectedKehadiranCount();
+        }
+
+        function updateSelectedKehadiranCount() {
+            const selected = document.querySelectorAll(".cb-kehadiran:checked");
+            const master = document.getElementById("selectAllKehadiran");
+            const allCbs = document.querySelectorAll(".cb-kehadiran");
+            if (master && allCbs.length > 0) {
+                master.checked = (selected.length === allCbs.length);
+            }
+            const btnHapus = document.getElementById("btnHapusMassalKehadiran");
+            const countSpan = document.getElementById("countSelectedKehadiran");
+            if (btnHapus && countSpan) {
+                countSpan.innerText = selected.length;
+                btnHapus.style.display = selected.length > 0 ? "inline-flex" : "none";
+            }
+        }
+
+        function adminHapusMassalKehadiran() {
+            const selected = document.querySelectorAll(".cb-kehadiran:checked");
+            if (selected.length === 0) {
+                alert("❌ Pilih minimal 1 data rekap kehadiran yang ingin dihapus!");
+                return;
+            }
+
+            const count = selected.length;
+            if (confirm(`⚠️ [VERIFIKASI 1/2] Apakah Anda YAKIN ingin menghapus ${count} data rekap kehadiran yang dicentang secara permanen?`)) {
+                const check = prompt(`🚨 [VERIFIKASI 2/2 - VERIFIKASI GANDA]\nPenghapusan ini TIDAK BISA DIBATALKAN!\n\nKetik tulisan 'HAPUS' (huruf besar semua) untuk memproses hapus permanen ${count} data kehadiran:`);
+                
+                if (check === "HAPUS") {
+                    showLoading(`Menghapus ${count} Data Kehadiran...`, 10);
+                    let updates = {};
+                    selected.forEach(cb => {
+                        updates[`keuangan/kehadiran/${cb.value}`] = null;
+                    });
+                    db.ref().update(updates).then(() => {
+                        hideLoading();
+                        alert(`✅ VERIFIKASI BERHASIL! ${count} data rekap kehadiran berhasil dihapus permanen dari database.`);
+                    }).catch(err => {
+                        hideLoading();
+                        alert("❌ Gagal menghapus data: " + err.message);
+                    });
+                } else {
+                    alert("❌ Verifikasi 2 gagal / dibatalkan. Data aman dan tidak ada yang dihapus.");
+                }
+            }
+        }
+
+        function toggleSelectAllPelatih(masterCb) {
+            const cbs = document.querySelectorAll(".cb-pelatih");
+            cbs.forEach(cb => cb.checked = masterCb.checked);
+            updateSelectedPelatihCount();
+        }
+
+        function updateSelectedPelatihCount() {
+            const selected = document.querySelectorAll(".cb-pelatih:checked");
+            const master = document.getElementById("selectAllPelatih");
+            const allCbs = document.querySelectorAll(".cb-pelatih");
+            if (master && allCbs.length > 0) {
+                master.checked = (selected.length === allCbs.length);
+            }
+            const btnHapus = document.getElementById("btnHapusMassalPelatih");
+            const countSpan = document.getElementById("countSelectedPelatih");
+            if (btnHapus && countSpan) {
+                countSpan.innerText = selected.length;
+                btnHapus.style.display = selected.length > 0 ? "inline-flex" : "none";
+            }
+        }
+
+        function adminHapusMassalPelatih() {
+            const selected = document.querySelectorAll(".cb-pelatih:checked");
+            if (selected.length === 0) {
+                alert("❌ Pilih minimal 1 akun pelatih yang ingin dihapus!");
+                return;
+            }
+
+            const count = selected.length;
+            if (confirm(`⚠️ [VERIFIKASI 1/2] Apakah Anda YAKIN ingin menghapus PERMANEN ${count} akun pelatih yang dicentang?`)) {
+                const check = prompt(`🚨 [VERIFIKASI 2/2 - VERIFIKASI GANDA]\nHapus akun pelatih secara permanen!\n\nKetik tulisan 'HAPUS' (huruf besar semua) untuk memproses ${count} akun pelatih:`);
+                
+                if (check === "HAPUS") {
+                    showLoading(`Menghapus ${count} Akun Pelatih...`, 10);
+                    let updates = {};
+                    selected.forEach(cb => {
+                        updates[`keuangan/pelatih/${cb.value}`] = null;
+                    });
+                    db.ref().update(updates).then(() => {
+                        hideLoading();
+                        alert(`✅ VERIFIKASI BERHASIL! ${count} akun pelatih berhasil dihapus permanen.`);
+                    }).catch(err => {
+                        hideLoading();
+                        alert("❌ Gagal menghapus akun: " + err.message);
+                    });
+                } else {
+                    alert("❌ Verifikasi 2 gagal / dibatalkan. Akun pelatih aman.");
+                }
+            }
+        }
+
+        function toggleSelectAllPenarikan(masterCb) {
+            const cbs = document.querySelectorAll(".cb-penarikan");
+            cbs.forEach(cb => cb.checked = masterCb.checked);
+            updateSelectedPenarikanCount();
+        }
+
+        function updateSelectedPenarikanCount() {
+            const selected = document.querySelectorAll(".cb-penarikan:checked");
+            const master = document.getElementById("selectAllPenarikan");
+            const allCbs = document.querySelectorAll(".cb-penarikan");
+            if (master && allCbs.length > 0) {
+                master.checked = (selected.length === allCbs.length);
+            }
+            const btnHapus = document.getElementById("btnHapusMassalPenarikan");
+            const countSpan = document.getElementById("countSelectedPenarikan");
+            if (btnHapus && countSpan) {
+                countSpan.innerText = selected.length;
+                btnHapus.style.display = selected.length > 0 ? "inline-flex" : "none";
+            }
+        }
+
+        function adminHapusMassalPenarikan() {
+            const selected = document.querySelectorAll(".cb-penarikan:checked");
+            if (selected.length === 0) {
+                alert("❌ Pilih minimal 1 rekap pengajuan penarikan yang ingin dihapus!");
+                return;
+            }
+
+            const count = selected.length;
+            if (confirm(`⚠️ [VERIFIKASI 1/2] Apakah Anda YAKIN ingin menghapus ${count} riwayat pengajuan penarikan dana yang dicentang?`)) {
+                const check = prompt(`🚨 [VERIFIKASI 2/2 - VERIFIKASI GANDA]\nKetik tulisan 'HAPUS' (huruf besar semua) untuk menghapus permanen ${count} data riwayat penarikan:`);
+                
+                if (check === "HAPUS") {
+                    showLoading(`Menghapus ${count} Riwayat Penarikan...`, 10);
+                    let updates = {};
+                    selected.forEach(cb => {
+                        updates[`keuangan/penarikan/${cb.value}`] = null;
+                    });
+                    db.ref().update(updates).then(() => {
+                        hideLoading();
+                        alert(`✅ VERIFIKASI BERHASIL! ${count} data riwayat penarikan berhasil dihapus permanen.`);
+                    }).catch(err => {
+                        hideLoading();
+                        alert("❌ Gagal menghapus data penarikan: " + err.message);
+                    });
+                } else {
+                    alert("❌ Verifikasi 2 gagal / dibatalkan. Data riwayat penarikan aman.");
+                }
+            }
+        }
+
+        // LIGHTBOX PREVIEW FOTO PROFIL
+        function previewFotoPelatihAdmin(fotoUrl, namaPelatih) {
+            if (!document.getElementById("modalPreviewFotoAdmin")) {
+                const div = document.createElement("div");
+                div.id = "modalPreviewFotoAdmin";
+                div.className = "modal-backdrop";
+                div.innerHTML = `
+                    <div class="modal-box" style="text-align:center; max-width:400px;">
+                        <div class="modal-header">
+                            <h3 id="previewFotoTitle"><i class="fa-solid fa-id-badge" style="color:var(--primary);"></i> Foto Profil Pelatih</h3>
+                            <button class="btn-close-modal" onclick="closePreviewFotoAdmin()">&times;</button>
+                        </div>
+                        <div style="margin: 16px 0;">
+                            <img id="previewFotoImg" src="" style="width:100%; max-height:350px; border-radius:14px; object-fit:cover; border:2px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        </div>
+                        <button class="btn-submit-form" style="background:rgba(255,255,255,0.1); color:#fff;" onclick="closePreviewFotoAdmin()">Tutup Preview</button>
+                    </div>
+                `;
+                document.body.appendChild(div);
+            }
+            document.getElementById("previewFotoTitle").innerHTML = `<i class="fa-solid fa-id-badge" style="color:var(--primary);"></i> Coach ${namaPelatih}`;
+            document.getElementById("previewFotoImg").src = fotoUrl;
+            document.getElementById("modalPreviewFotoAdmin").classList.add("active");
+        }
+
+        function closePreviewFotoAdmin() {
+            const modal = document.getElementById("modalPreviewFotoAdmin");
+            if (modal) modal.classList.remove("active");
+        }
+    </script>
+</body>
+</html>
