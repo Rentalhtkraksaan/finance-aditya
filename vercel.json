@@ -1,4 +1,7 @@
 {
   "trailingSlash": false,
-  "cleanUrls": false
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/", "destination": "/money.html" }
+  ]
 }
