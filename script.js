@@ -63,7 +63,7 @@ const AUTHORIZED_HASHES = [
 
 let failedAttempts = 0;
 let lockoutTimerInterval = null;
-const SESSION_MAX_SECONDS = 5; // 5 Detik Auto-Lock
+const SESSION_MAX_SECONDS = 20; // 20 Detik Auto-Lock
 let sessionCountdownSeconds = SESSION_MAX_SECONDS;
 let sessionCountdownInterval = null;
 
@@ -394,7 +394,7 @@ function updateCountdownDisplay() {
     const display = document.getElementById("sessionCountdownDisplay");
     if (display) {
         display.textContent = formatCountdownText(sessionCountdownSeconds);
-        if (sessionCountdownSeconds <= 2) {
+        if (sessionCountdownSeconds <= 5) {
             display.parentElement.classList.remove("border-amber-500/30", "text-amber-400");
             display.parentElement.classList.add("border-rose-500/50", "text-rose-400", "animate-pulse");
         } else {
@@ -405,7 +405,7 @@ function updateCountdownDisplay() {
 }
 
 function resetSessionCountdown() {
-    sessionCountdownSeconds = SESSION_MAX_SECONDS; // Reset ke 5 Detik
+    sessionCountdownSeconds = SESSION_MAX_SECONDS; // Reset ke 20 Detik
     updateCountdownDisplay();
 }
 
@@ -482,7 +482,7 @@ async function handleSecretCodeSubmit(e) {
         Swal.fire({
             icon: 'success',
             title: 'Sesi Berhasil Diperpanjang!',
-            text: 'Kode Rahasia Pemilik terverifikasi. Timer 5 detik diatur ulang.',
+            text: 'Kode Rahasia Pemilik terverifikasi. Timer 20 detik diatur ulang.',
             background: '#0f172a',
             color: '#f8fafc',
             confirmButtonColor: '#10b981'
