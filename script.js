@@ -152,26 +152,30 @@ async function sha256(message) {
     return sha256Sync(trimmed);
 }
 
-// Check initial session
+// Check initial session without lag
 function checkAuthSession() {
     const isAuth = sessionStorage.getItem("ditfur_auth");
     const overlay = document.getElementById("authOverlay");
     
     if (isAuth === "true") {
         overlay.classList.add("opacity-0", "pointer-events-none");
-        setTimeout(() => overlay.style.display = "none", 400);
+        overlay.style.display = "none";
         resetSessionCountdown();
     } else {
         overlay.style.display = "flex";
-        setTimeout(() => overlay.classList.remove("opacity-0", "pointer-events-none"), 10);
-        setTimeout(() => document.getElementById("authPinInput").focus(), 300);
+        overlay.classList.remove("opacity-0", "pointer-events-none");
+        const input = document.getElementById("authPinInput");
+        if (input) {
+            requestAnimationFrame(() => input.focus());
+        }
     }
 }
 
-// PIN Input Handlers (Maksimal 10 Karakter)
+// PIN Input Handlers (Maksimal 10 Karakter - Responsif & Ringan)
 function appendPin(val) {
     if (isBruteForceLocked()) return;
     const input = document.getElementById("authPinInput");
+    if (!input) return;
     if (input.value.length < 10) {
         input.value += val;
     }
@@ -236,7 +240,7 @@ function isBruteForceLocked() {
     return Date.now() < lockoutUntil;
 }
 
-// Handle PIN Submission
+// Handle PIN Submission with Fast Luxury Verification (Max 0.5s Loading)
 async function handlePinSubmit(e) {
     if (e) e.preventDefault();
 
@@ -250,6 +254,7 @@ async function handlePinSubmit(e) {
 
     if (!enteredPin) {
         showToast("Masukkan PIN terlebih dahulu!", "warning");
+        input.focus();
         return;
     }
 
@@ -258,36 +263,66 @@ async function handlePinSubmit(e) {
         return;
     }
 
+    const btnUnlock = document.getElementById("btnUnlock");
+    const originalBtnHtml = btnUnlock.innerHTML;
+
+    // 1. Tampilkan state loading instan tanpa lag
+    btnUnlock.disabled = true;
+    input.disabled = true;
+    btnUnlock.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-xs"></i> <span>Memverifikasi...</span>';
+    btnUnlock.classList.add("opacity-90");
+
+    // 2. Hitung hash secara instan
     const hashedInput = await sha256(enteredPin);
     const customHash = localStorage.getItem("finance_custom_pin_hash");
-
     const isValid = (customHash && customHash === hashedInput) || AUTHORIZED_HASHES.includes(hashedInput);
 
-    if (isValid) {
-        // Berhasil Login
-        failedAttempts = 0;
-        updateAttemptsBadge();
-        sessionStorage.setItem("ditfur_auth", "true");
-        input.value = '';
-        
-        const overlay = document.getElementById("authOverlay");
-        overlay.classList.add("opacity-0", "pointer-events-none");
-        setTimeout(() => overlay.style.display = "none", 400);
+    // 3. Jeda verifikasi tepat 400ms (maksimal 0.5 detik) agar terasa mulus dan responsif
+    setTimeout(() => {
+        if (isValid) {
+            // Berhasil Login
+            failedAttempts = 0;
+            updateAttemptsBadge();
+            sessionStorage.setItem("ditfur_auth", "true");
+            input.value = '';
 
-        showToast("🔐 Akses Berhasil Diverifikasi!", "success");
-        resetSessionCountdown();
-    } else {
-        // Gagal Login
-        failedAttempts++;
-        input.value = '';
-        updateAttemptsBadge();
+            btnUnlock.innerHTML = '<i class="fa-solid fa-check text-xs text-emerald-300"></i> <span class="text-emerald-100 font-extrabold">Akses Terbuka!</span>';
+            btnUnlock.classList.remove("from-cyan-500", "via-blue-600", "to-indigo-600");
+            btnUnlock.classList.add("from-emerald-500", "to-emerald-600");
 
-        if (failedAttempts >= 3) {
-            triggerBruteForceLockout();
+            const overlay = document.getElementById("authOverlay");
+            overlay.classList.add("opacity-0", "pointer-events-none");
+
+            setTimeout(() => {
+                overlay.style.display = "none";
+                btnUnlock.disabled = false;
+                input.disabled = false;
+                btnUnlock.innerHTML = originalBtnHtml;
+                btnUnlock.classList.remove("from-emerald-500", "to-emerald-600", "opacity-90");
+                btnUnlock.classList.add("from-cyan-500", "via-blue-600", "to-indigo-600");
+            }, 300);
+
+            showToast("🔓 Akses Brankas Terbuka!", "success");
+            resetSessionCountdown();
         } else {
-            showToast(`PIN Salah! Sisa percobaan: ${3 - failedAttempts}`, "error");
+            // Gagal Login
+            btnUnlock.disabled = false;
+            input.disabled = false;
+            btnUnlock.innerHTML = originalBtnHtml;
+            btnUnlock.classList.remove("opacity-90");
+
+            failedAttempts++;
+            input.value = '';
+            updateAttemptsBadge();
+
+            if (failedAttempts >= 3) {
+                triggerBruteForceLockout();
+            } else {
+                showToast(`PIN Salah! Sisa percobaan: ${3 - failedAttempts}`, "error");
+                input.focus();
+            }
         }
-    }
+    }, 400); // Maksimal 0.5 detik (400ms)
 }
 
 function updateAttemptsBadge() {

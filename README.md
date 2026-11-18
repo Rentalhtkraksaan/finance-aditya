@@ -19,3 +19,4 @@ Dashboard Manajemen Finansial Pribadi & Brankas Kas Cerdas berbasis HTML, CSS Gl
 
 ## 🚀 Menjalankan Aplikasi
 Buka file `money.html` langsung di browser, atau deploy langsung ke Vercel / GitHub Pages.
+
