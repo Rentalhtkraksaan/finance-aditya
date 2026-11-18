@@ -171,8 +171,13 @@ function checkAuthSession() {
     }
 }
 
-// PIN Input Handlers (Maksimal 10 Karakter - Responsif & Ringan)
+// PIN Input Handlers (Maksimal 10 Karakter - Ultra Fast Zero Lag)
+let _lastPinTap = 0;
 function appendPin(val) {
+    const now = performance.now();
+    if (now - _lastPinTap < 40) return;
+    _lastPinTap = now;
+
     if (isBruteForceLocked()) return;
     const input = document.getElementById("authPinInput");
     if (!input) return;
@@ -183,13 +188,14 @@ function appendPin(val) {
 
 function clearPin() {
     if (isBruteForceLocked()) return;
-    document.getElementById("authPinInput").value = '';
+    const input = document.getElementById("authPinInput");
+    if (input) input.value = '';
 }
 
 function deletePinLast() {
     if (isBruteForceLocked()) return;
     const input = document.getElementById("authPinInput");
-    input.value = input.value.slice(0, -1);
+    if (input) input.value = input.value.slice(0, -1);
 }
 
 function togglePinVisibility() {
@@ -285,6 +291,7 @@ async function handlePinSubmit(e) {
             updateAttemptsBadge();
             sessionStorage.setItem("ditfur_auth", "true");
             input.value = '';
+            initDashboardData();
 
             btnUnlock.innerHTML = '<i class="fa-solid fa-check text-xs text-emerald-300"></i> <span class="text-emerald-100 font-extrabold">Akses Terbuka!</span>';
             btnUnlock.classList.remove("from-cyan-500", "via-blue-600", "to-indigo-600");
@@ -467,6 +474,7 @@ async function handleSecretCodeSubmit(e) {
         // Kode Rahasia Benar -> Sesi Langsung Diperpanjang!
         sessionStorage.setItem("ditfur_auth", "true");
         resetSessionCountdown();
+        initDashboardData();
 
         // Tutup modal kode rahasia dan auth overlay jika ada
         const secretModal = document.getElementById("modalSecretCode");
@@ -2321,8 +2329,21 @@ function exportToCSV() {
 }
 
 // ==========================================================================
-// 14. INITIALIZATION ON LOAD
+// 14. INITIALIZATION ON LOAD (ZERO-LAG DEFERRED INITIALIZATION)
 // ==========================================================================
+
+let _dashboardInitialized = false;
+function initDashboardData() {
+    if (_dashboardInitialized) return;
+    _dashboardInitialized = true;
+
+    populateMonthFilter();
+    listenForTransactions();
+    listenForSaldo();
+    listenForTargets();
+    const tgl = document.getElementById('tanggal');
+    if (tgl) tgl.value = getTodayDateString();
+}
 
 window.addEventListener('DOMContentLoaded', () => {
     checkAuthSession();
@@ -2339,11 +2360,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (val) localStorage.setItem("finance_custom_pin_hash", val);
             });
 
-            populateMonthFilter();
-            listenForTransactions();
-            listenForSaldo();
-            listenForTargets();
-            document.getElementById('tanggal').value = getTodayDateString();
+            // Hanya load data dashboard jika sesi login aktif
+            if (sessionStorage.getItem("ditfur_auth") === "true") {
+                initDashboardData();
+            }
         })
         .catch(err => {
             console.error("Firebase Auth Error:", err);

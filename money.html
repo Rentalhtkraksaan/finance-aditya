@@ -104,19 +104,13 @@
     <!-- HIGH-SECURITY AUTH & LOCK OVERLAY (MODAL PIN ELEGAN MAX 10 KAR)-->
     <!-- ============================================================== -->
     <div id="authOverlay"
-        class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl transition-all duration-500">
-        class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl transition-all duration-300">
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#070b14]/95 transition-opacity duration-300">
         <div
-            class="relative w-full max-w-md mx-4 p-8 rounded-3xl bg-slate-900/90 border border-slate-700/70 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] backdrop-blur-3xl text-center">
-
-            <!-- Glow Accent -->
-            <div
-                class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-gradient-to-tr from-cyan-500 to-emerald-400 rounded-full blur-2xl opacity-40">
-            </div>
+            class="relative w-full max-w-md mx-4 p-7 sm:p-8 rounded-3xl bg-[#0e1626] border border-slate-700/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] text-center">
 
             <!-- Shield Icon Badge -->
             <div
-                class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-emerald-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-inner">
+                class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-inner">
                 <i class="fa-solid fa-shield-halved text-2xl"></i>
             </div>
 
@@ -135,9 +129,9 @@
             <form id="authPinForm" onsubmit="handlePinSubmit(event)">
                 <div class="relative mb-5">
                     <input type="password" id="authPinInput" maxlength="10" autocomplete="off" placeholder="••••••••••"
-                        class="w-full py-3.5 px-4 text-center tracking-[0.35em] text-xl font-bold rounded-2xl bg-slate-800/80 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all shadow-inner">
+                        class="w-full py-3.5 px-4 text-center tracking-[0.35em] text-xl font-bold rounded-2xl bg-slate-800 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 shadow-inner">
                     <button type="button" onclick="togglePinVisibility()"
-                        class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition">
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors">
                         <i id="pinEyeIcon" class="fa-solid fa-eye text-sm"></i>
                     </button>
                 </div>
@@ -148,22 +142,22 @@
                     <span id="attemptsBadge" class="font-semibold text-emerald-400">3 / 3</span>
                 </div>
 
-                <!-- Numpad Virtual (Touch-Friendly) -->
+                <!-- Numpad Virtual (Touch-Friendly, Zero-Lag) -->
                 <div class="grid grid-cols-3 gap-2.5 mb-6">
-                    <button type="button" onclick="appendPin('1')" class="pin-key">1</button>
-                    <button type="button" onclick="appendPin('2')" class="pin-key">2</button>
-                    <button type="button" onclick="appendPin('3')" class="pin-key">3</button>
-                    <button type="button" onclick="appendPin('4')" class="pin-key">4</button>
-                    <button type="button" onclick="appendPin('5')" class="pin-key">5</button>
-                    <button type="button" onclick="appendPin('6')" class="pin-key">6</button>
-                    <button type="button" onclick="appendPin('7')" class="pin-key">7</button>
-                    <button type="button" onclick="appendPin('8')" class="pin-key">8</button>
-                    <button type="button" onclick="appendPin('9')" class="pin-key">9</button>
-                    <button type="button" onclick="clearPin()" class="pin-key text-rose-400 hover:bg-rose-500/20"><i
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('1')" class="pin-key">1</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('2')" class="pin-key">2</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('3')" class="pin-key">3</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('4')" class="pin-key">4</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('5')" class="pin-key">5</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('6')" class="pin-key">6</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('7')" class="pin-key">7</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('8')" class="pin-key">8</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('9')" class="pin-key">9</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="clearPin()" class="pin-key text-rose-400 hover:text-rose-300"><i
                             class="fa-solid fa-rotate-left text-xs"></i></button>
-                    <button type="button" onclick="appendPin('0')" class="pin-key">0</button>
-                    <button type="button" onclick="deletePinLast()"
-                        class="pin-key text-amber-400 hover:bg-amber-500/20"><i
+                    <button type="button" onmousedown="event.preventDefault()" onclick="appendPin('0')" class="pin-key">0</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="deletePinLast()"
+                        class="pin-key text-amber-400 hover:text-amber-300"><i
                             class="fa-solid fa-delete-left text-xs"></i></button>
                 </div>
 

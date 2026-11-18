@@ -66,33 +66,34 @@
     box-shadow: 0 4px 15px -3px rgba(245, 158, 11, 0.25);
 }
 
-/* Virtual PIN Keypad Buttons - Instant Touch & No Tap Lag */
+/* Virtual PIN Keypad Buttons - Instant Hardware-Accelerated Zero Lag */
 .pin-key {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0.875rem 0.5rem;
     border-radius: 1rem;
-    background: rgba(30, 41, 59, 0.75);
-    border: 1px solid rgba(51, 65, 85, 0.7);
+    background: #1e293b;
+    border: 1px solid #334155;
     color: #f8fafc;
     font-size: 1.125rem;
     font-weight: 700;
-    transition: transform 0.08s ease, background-color 0.08s ease, border-color 0.08s ease;
     user-select: none;
     -webkit-user-select: none;
     cursor: pointer;
     touch-action: manipulation;
+    will-change: transform;
+    transition: transform 0.04s ease, background-color 0.04s ease;
 }
 .pin-key:hover {
-    background: rgba(51, 65, 85, 0.95);
-    border-color: rgba(6, 182, 212, 0.5);
-    transform: translateY(-1px);
+    background: #334155;
+    border-color: #06b6d4;
 }
 .pin-key:active {
-    transform: scale(0.92);
-    background: rgba(6, 182, 212, 0.3);
-    border-color: rgba(6, 182, 212, 0.8);
+    transform: scale(0.93);
+    background: #0284c7 !important;
+    border-color: #38bdf8 !important;
+    color: #ffffff !important;
 }
 
 /* Chart Mode Switcher */

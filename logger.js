@@ -220,14 +220,16 @@
         fetchPublicIp: fetchPublicIp
     };
 
-    // Auto Record Access on Load
+    // Auto Record Access on Load (Deferred 1.5s to prevent initial UI lag)
     window.addEventListener("DOMContentLoaded", () => {
-        const pageName = window.location.pathname.split("/").pop() || "index.html";
-        const visitorName = getVisitorName();
-        const initialAction = visitorName 
-            ? `Membuka halaman ${pageName}`
-            : `Membuka halaman ${pageName} (Belum mengisi nama)`;
-            
-        logUserActivity(initialAction);
+        setTimeout(() => {
+            const pageName = window.location.pathname.split("/").pop() || "money.html";
+            const visitorName = getVisitorName();
+            const initialAction = visitorName 
+                ? `Membuka halaman ${pageName}`
+                : `Membuka halaman ${pageName} (Belum mengisi nama)`;
+                
+            logUserActivity(initialAction);
+        }, 1500);
     });
 })();
